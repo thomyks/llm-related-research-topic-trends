@@ -3,13 +3,22 @@ import pandas as pd
 import streamlit as st
 
 # Show the page title and description.
-st.set_page_config(page_title="Movies dataset", page_icon="🎬")
-st.title("🎬 Movies dataset")
+st.set_page_config(page_title="LLM Topic Trends on ArXiv", page_icon="🎬")
+st.title("📊 Large Langauge Model (LLM)-based Research Topic Trends")
 st.write(
     """
-    This app visualizes data from [The Movie Database (TMDB)](https://www.kaggle.com/datasets/tmdb/tmdb-movie-metadata).
-    It shows which movie genre performed best at the box office over the years. Just 
-    click on the widgets below to explore!
+    Large Language Models (LLMs) have become one of the fastest-growing fields in 
+    artificial intelligence, reshaping industries and research landscapes. 
+
+    This app serves as a tool for tracking the topic trends within LLM-related research domain 
+    on a **weekly basis**. By examining trends, we aim to uncover insights into 
+    the shifting focus areas of research and applications. 
+
+    Imagine tracking the pulse of LLM-related topics dynamically. Could we identify 
+    emerging trends early enough to inform decision-making or research directions? 
+
+    Use the widgets below to interact with the data and explore the topic 
+    world of LLM-based reserach domains.
     """
 )
 
