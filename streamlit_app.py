@@ -3,8 +3,8 @@ import pandas as pd
 import streamlit as st
 
 # Show the page title and description.
-st.set_page_config(page_title="LLM Topic Trends on ArXiv", page_icon="🎬")
-st.title("📊 Large Langauge Model (LLM)-based Research Topic Trends")
+st.set_page_config(page_title="LLM Topic Trends on ArXiv", page_icon="🤖")
+st.title("LLM-based Research Trends")
 st.write(
     """
     Large Language Models (LLMs) have become one of the fastest-growing fields in 
@@ -21,6 +21,46 @@ st.write(
     world of LLM-based reserach domains.
     """
 )
+# Load the LLM-related dataset
+@st.cache_data
+def load_llm_data():
+    df_llm = pd.read_csv("data/LLM_related.csv", parse_dates=["update_date"])
+    return df_llm
+
+df_llm = load_llm_data()
+
+# Preprocess the data: Group by week and count articles
+df_llm['week'] = df_llm['update_date'].dt.to_period('W').apply(lambda r: r.start_time)
+articles_per_week = df_llm.groupby('week').size().reset_index(name='num_articles')
+
+# Altair plot to display the number of published articles per week
+chart = (
+    alt.Chart(articles_per_week)
+    .mark_line(point=alt.OverlayMarkDef(filled=True, size=50))  # Adds points to the line
+    .encode(
+        x=alt.X(
+            "week:T",
+            title="Week",
+            axis=alt.Axis(format="%b %Y", tickCount="month"),  # Format as 'Month Year'
+        ),
+        y=alt.Y("num_articles:Q", title="Number of Articles"),
+        tooltip=[
+            alt.Tooltip("week:T", title="Week"),
+            alt.Tooltip("num_articles:Q", title="Number of Articles"),
+        ]
+    )
+    .properties(
+        title="Number of Published LLM-related Articles per Week",
+        height=400,
+        width=800
+    )
+    .interactive()  # Enables zooming and panning
+)
+
+
+# Display the chart in the Streamlit app
+st.altair_chart(chart, use_container_width=True)
+
 
 
 # Load the data from a CSV. We're caching this so it doesn't reload every time the app
@@ -73,3 +113,5 @@ chart = (
     .properties(height=320)
 )
 st.altair_chart(chart, use_container_width=True)
+
+
