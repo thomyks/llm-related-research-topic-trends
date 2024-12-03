@@ -24,7 +24,7 @@ st.write(
 # Load the LLM-related dataset
 @st.cache_data
 def load_llm_data():
-    df_llm = pd.read_csv("data/LLM_related.csv", parse_dates=["update_date"])
+    df_llm = pd.read_csv("data/filtered_dataset.csv", parse_dates=["update_date"])
     return df_llm
 
 df_llm = load_llm_data()
