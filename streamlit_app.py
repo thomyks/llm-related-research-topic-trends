@@ -126,7 +126,101 @@ chart = (
 st.altair_chart(chart, use_container_width=True)
 
 
+# # Topic Trends
+# # Title
+# st.markdown("### Topic Trends per LLM-related Subdomains")
+
+# # Load the data from the real dataset
+# @st.cache_data
+# def load_data():
+#     # Replace with the uploaded file path
+#     df = pd.read_csv("data/First_step_clustering_results_categorized_with_llm.csv")
+#     return df
+
+# # Load the dataset
+# df = load_data()
+
+# # Parse the 'update_date' column into datetime objects
+# df["update_date"] = pd.to_datetime(df["update_date"], errors="coerce")
+
+# # Ensure the dataset is not empty after parsing
+# if df.empty:
+#     st.error("No valid data found in the dataset. Please check your data.")
+# else:
+#     # Create a navigation bar with tabs for each subdomain
+#     subdomains = df["Categories"].unique()
+
+#     tab = st.radio(
+#         "Select Subdomain",
+#         options=subdomains,
+#         horizontal=True,  # This creates a navigation-like bar
+#         key="subdomain_radio"  # Add a unique key
+#     )
+
+#     # Filter data based on the selected subdomain
+#     df_filtered = df[df["Categories"] == tab]
+
+#     # Check if the filtered dataset is empty
+#     if df_filtered.empty:
+#         st.warning(f"No data available for the selected subdomain: {tab}.")
+#     else:
+#         # Add a column for weekly periods
+#         df_filtered["Week_Start"] = df_filtered["update_date"].dt.to_period("W").apply(lambda x: x.start_time)
+
+#         # Count articles per topic per week
+#         df_grouped = df_filtered.groupby(["Week_Start", "Human_Readable_Topic"]).size().reset_index(name="Weekly_Count")
+
+#         # Allow the user to toggle topics
+#         topics = df_grouped["Human_Readable_Topic"].unique()
+
+#         # Select first 10 topics as default
+#         default_topics = topics[:10] if len(topics) > 10 else topics
+
+#         selected_topics = st.multiselect(
+#             "Select Topics to Display",
+#             options=topics,
+#             default=default_topics,  # Default to the first 10 topics or all if fewer than 10
+#             key="topic_multiselect"  # Add a unique key for the multiselect widget
+#         )
+
+#         # Filter the grouped data based on selected topics
+#         df_grouped_filtered = df_grouped[df_grouped["Human_Readable_Topic"].isin(selected_topics)]
+
+#         # Display trends for the selected subdomain
+#         st.markdown(f"### Topic Trends for Subdomain: **{tab}**")
+
+#         # Create an interactive line chart with maximum width
+#         chart = (
+#             alt.Chart(df_grouped_filtered)
+#             .mark_line()
+#             .encode(
+#                 x=alt.X("Week_Start:T", title="Week Start"),
+#                 y=alt.Y("Weekly_Count:Q", title="Weekly Count"),
+#                 color=alt.Color("Human_Readable_Topic:N", title="Topics"),  # Different colors for each topic
+#             )
+#             .properties(
+#                 height=600, 
+#                 width="container"  # Use the full width of the container
+#             )
+#         )
+
+#         # Display the chart as wide as possible
+#         st.altair_chart(chart, use_container_width=True)
+
+#         # Display detailed insights
+#         st.markdown("### Subdomain and Topic Details")
+#         st.write(f"Showing detailed trends for topics under **{tab}**.")
+
+#         # Add a data table for granular details
+#         st.dataframe(df_grouped_filtered, use_container_width=True)
+
+
 # Topic Trends
+# Title
+import pandas as pd
+import streamlit as st
+import altair as alt
+
 # Title
 st.markdown("### Topic Trends per LLM-related Subdomains")
 
@@ -134,7 +228,7 @@ st.markdown("### Topic Trends per LLM-related Subdomains")
 @st.cache_data
 def load_data():
     # Replace with the uploaded file path
-    df = pd.read_csv("data/First_step_clustering_results_categorized_with_llm.csv")
+    df = pd.read_csv("data/First_step_clustering_results_categorized_with_llm (5).csv")
     return df
 
 # Load the dataset
@@ -150,11 +244,12 @@ else:
     # Create a navigation bar with tabs for each subdomain
     subdomains = df["Categories"].unique()
 
+    # Add a radio button to select a subdomain with a unique key
     tab = st.radio(
         "Select Subdomain",
         options=subdomains,
         horizontal=True,  # This creates a navigation-like bar
-        key="subdomain_radio"  # Add a unique key
+        key="unique_subdomain_radio"  # Ensure the key is unique
     )
 
     # Filter data based on the selected subdomain
@@ -164,23 +259,24 @@ else:
     if df_filtered.empty:
         st.warning(f"No data available for the selected subdomain: {tab}.")
     else:
-        # Add a column for weekly periods
-        df_filtered["Week_Start"] = df_filtered["update_date"].dt.to_period("W").apply(lambda x: x.start_time)
+        # Add a column for monthly periods
+        df_filtered["Month_Start"] = df_filtered["update_date"].dt.to_period("M").apply(lambda x: x.start_time)
 
-        # Count articles per topic per week
-        df_grouped = df_filtered.groupby(["Week_Start", "Human_Readable_Topic"]).size().reset_index(name="Weekly_Count")
+        # Count articles per topic per month
+        df_grouped = df_filtered.groupby(["Month_Start", "Human_Readable_Topic"]).size().reset_index(name="Monthly_Count")
 
-        # Allow the user to toggle topics
+        # Get the total count for each topic to determine the top 10 topics
+        topic_totals = df_grouped.groupby("Human_Readable_Topic")["Monthly_Count"].sum().reset_index()
+        top_topics = topic_totals.sort_values(by="Monthly_Count", ascending=False)["Human_Readable_Topic"].head(5).tolist()
+
+        # Allow the user to toggle topics with a unique key
         topics = df_grouped["Human_Readable_Topic"].unique()
-
-        # Select first 10 topics as default
-        default_topics = topics[:10] if len(topics) > 10 else topics
 
         selected_topics = st.multiselect(
             "Select Topics to Display",
             options=topics,
-            default=default_topics,  # Default to the first 10 topics or all if fewer than 10
-            key="topic_multiselect"  # Add a unique key for the multiselect widget
+            default=top_topics,  # Default to the top 10 topics
+            key=f"topic_multiselect_{tab}"  # Ensure the key is unique by appending the tab name
         )
 
         # Filter the grouped data based on selected topics
@@ -194,15 +290,16 @@ else:
             alt.Chart(df_grouped_filtered)
             .mark_line()
             .encode(
-                x=alt.X("Week_Start:T", title="Week Start"),
-                y=alt.Y("Weekly_Count:Q", title="Weekly Count"),
+                x=alt.X("Month_Start:T", title="Month Start"),
+                y=alt.Y("Monthly_Count:Q", title="Monthly Count"),
                 color=alt.Color("Human_Readable_Topic:N", title="Topics"),  # Different colors for each topic
             )
             .properties(
                 height=600, 
-                width="container"  # Use the full width of the container
+                width=1400  # Use the full width of the container
             )
         )
+        
 
         # Display the chart as wide as possible
         st.altair_chart(chart, use_container_width=True)
@@ -213,6 +310,23 @@ else:
 
         # Add a data table for granular details
         st.dataframe(df_grouped_filtered, use_container_width=True)
+
+
+
+        # Filter the original data to include rows with selected topics
+        df_additional_info = df_filtered[df_filtered["Human_Readable_Topic"].isin(selected_topics)]
+
+        # Display the additional details in a table
+        st.markdown("### Additional Details for Selected Topics")
+        st.dataframe(df_additional_info, use_container_width=True)
+
+
+
+
+
+
+
+
 
 
 
