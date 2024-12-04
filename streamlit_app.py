@@ -4,26 +4,58 @@ import streamlit as st
 
 # Show the page title and description.
 st.set_page_config(page_title="LLM Topic Trends on ArXiv", page_icon="🤖")
-st.title("LLM-based Research Trends")
+
+# Title
+st.title("Tracking LLM-based Research Trends")
+
+# Introduction
 st.write(
     """
-    Large Language Models (LLMs) have become one of the fastest-growing fields in 
-    artificial intelligence, reshaping industries and research landscapes. 
+    Large Language Models (LLMs) have emerged as one of the most dynamic and transformative fields in 
+    artificial intelligence, reshaping industries and academic landscapes alike.
+    """
+)
 
-    This app serves as a tool for tracking the topic trends within LLM-related research domain 
-    on a **weekly basis**. By examining trends, we aim to uncover insights into 
-    the shifting focus areas of research and applications. 
+# Context and Significance
+st.subheader("The Rise of LLM-based Research Domain")
+st.write(
+    """
+    On November 30, 2022, OpenAI launched ChatGPT, a closed-source Large Language Model (LLM) as an 
+    interactive web-based application. In just two years, millions of users have adopted this tool for a 
+    wide array of tasks, including:
+    
+    - Generating creative content
+    - Summarizing articles or essays
+    - Coding
+    - Translating languages
+    - Conducting data analysis
 
-   On November 30, 2022, approximately two years ago, ChatGPT, the closed-source Large Language Model (LLM), 
-   was introduced as an interactive web-based application. Over the past two years, millions of users have embraced
-  this tool to assist with a wide range of tasks, including generating creative content, summarizing articles or essays, 
-  coding, translating languages, or conducting data analysis. Its impact has also sparked growing interest across different
-    research domains, leading to studies that explore both the theoretical foundations and practical applications of this technology.
+    The immense popularity and impact of ChatGPT have spurred a wave of interest in LLMs across 
+    academic and professional domains, prompting studies on both theoretical underpinnings 
+    and practical applications of this technology.
+    """
+)
 
-On the ArXiv platform, since the date of the release of the ChatGPT, 537,482 papers have been published. For those unfamiliar with ArXiv, 
-it is an open-access archive hosting nearly 2.4 million scholarly articles across diverse fields, including physics, mathematics, 
-computer science, quantitative biology, quantitative finance, statistics, electrical engineering, systems science, and economics.
+# ArXiv Overview
+st.subheader("ArXiv: A Hub for Scholarly Knowledge")
+st.write(
+    """
+    Since ChatGPT's release, **537,482 papers** have been published on ArXiv, reflecting the 
+    rapid growth of scholarly contributions across disciplines. For those unfamiliar, ArXiv 
+    is an open-access archive hosting nearly **2.4 million scholarly articles** spanning fields such as: 
+    Physics, Mathematics, Computer Science, Quantitative Biology, Quantitative Finance, Statistics, Electrical Engineering, Systems Science, Economics.
 
+    With this app, we explore the intersection of LLM advancements and research trends across these diverse fields.
+    """
+)
+
+# Purpose
+st.subheader("About This App")
+st.write(
+    """
+    This app provides an interactive tool to track and analyze **weekly trends** within 
+    LLM-related research on the ArXiv platform. By identifying shifting focus areas, 
+    we aim to uncover valuable insights into the evolution of research themes and applications.
     """
 )
 
@@ -79,12 +111,22 @@ import altair as alt
 # Load the data from a CSV file
 @st.cache_data
 def load_data():
-    df = pd.read_csv("data/top_500_entities_.csv")
+    df = pd.read_csv("data/top_500_entity_data.csv")
     return df
 
 
 # Load the dataset
 df = load_data()
+
+st.write(
+    """
+    The following dashboard highlights trends in paper abstracts the top 500 entities related to large language models (LLMs) over a defined timespan (2022 November–2024 November). You can explore its trends and interactions with related entities like **fine-tuning**, **embeddings**, and other model-related terminologies.
+    """
+)
+
+
+
+
 
 # Parse the 'Date' column into datetime objects
 df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
