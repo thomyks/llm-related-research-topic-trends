@@ -317,7 +317,7 @@ else:
         df_additional_info = df_filtered[df_filtered["Human_Readable_Topic"].isin(selected_topics)]
 
         # Display the additional details in a table
-        st.markdown("### Additional Details for Selected Topics")
+        st.markdown("### Save the Details about the Papers!")
         st.dataframe(df_additional_info, use_container_width=True)
 
 
