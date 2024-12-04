@@ -130,7 +130,7 @@ if section == "Topic Trends":
     
         st.write(
         """
-        ### Definition of LLM-Related Research Domain
+        ### Categories of LLM-Related Research Domain
 
         The "LLM-related research domain" encompasses a diverse range of concepts, frameworks, methodologies, and technologies centered on developing and applying LLMs. Below are the key categories that define this domain:
 
