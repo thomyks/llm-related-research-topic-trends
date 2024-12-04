@@ -6,7 +6,7 @@ import streamlit as st
 st.set_page_config(page_title="LLM Topic Trends on ArXiv", page_icon="🤖", layout="wide")
 
 # Title
-st.title("Discover, Analyze, and Export Insights on Your Favorite LLM Research Topics from ArXiv.")
+st.title("Discover, Analyze, and Export Insights on Your Favorite LLM Research Topics")
 
 section = st.sidebar.radio(
     "Go to",
