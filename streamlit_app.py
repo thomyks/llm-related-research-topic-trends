@@ -14,13 +14,20 @@ st.write(
     on a **weekly basis**. By examining trends, we aim to uncover insights into 
     the shifting focus areas of research and applications. 
 
-    Imagine tracking the pulse of LLM-related topics dynamically. Could we identify 
-    emerging trends early enough to inform decision-making or research directions? 
+   On November 30, 2022, approximately two years ago, ChatGPT, the closed-source Large Language Model (LLM), 
+   was introduced as an interactive web-based application. Over the past two years, millions of users have embraced
+  this tool to assist with a wide range of tasks, including generating creative content, summarizing articles or essays, 
+  coding, translating languages, or conducting data analysis. Its impact has also sparked growing interest across different
+    research domains, leading to studies that explore both the theoretical foundations and practical applications of this technology.
 
-    Use the widgets below to interact with the data and explore the topic 
-    world of LLM-based reserach domains.
+On the ArXiv platform, since the date of the release of the ChatGPT, 537,482 papers have been published. For those unfamiliar with ArXiv, 
+it is an open-access archive hosting nearly 2.4 million scholarly articles across diverse fields, including physics, mathematics, 
+computer science, quantitative biology, quantitative finance, statistics, electrical engineering, systems science, and economics.
+
     """
 )
+
+# The Plot of the 2 years-weekly papers
 # Load the LLM-related dataset
 @st.cache_data
 def load_llm_data():
@@ -63,55 +70,95 @@ st.altair_chart(chart, use_container_width=True)
 
 
 
-# Load the data from a CSV. We're caching this so it doesn't reload every time the app
-# reruns (e.g. if the user interacts with the widgets).
+# Code 3
+# Load the data from a CSV file
+import pandas as pd
+import streamlit as st
+import altair as alt
+
+# Load the data from a CSV file
 @st.cache_data
 def load_data():
-    df = pd.read_csv("data/movies_genres_summary.csv")
+    df = pd.read_csv("data/top_500_entities_.csv")
     return df
 
 
+# Load the dataset
 df = load_data()
 
-# Show a multiselect widget with the genres using `st.multiselect`.
-genres = st.multiselect(
-    "Genres",
-    df.genre.unique(),
-    ["Action", "Adventure", "Biography", "Comedy", "Drama", "Horror"],
-)
+# Parse the 'Date' column into datetime objects
+df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
 
-# Show a slider widget with the years using `st.slider`.
-years = st.slider("Years", 1986, 2006, (2000, 2016))
+# Drop rows with invalid dates
+df = df.dropna(subset=["Date"])
 
-# Filter the dataframe based on the widget input and reshape it.
-df_filtered = df[(df["genre"].isin(genres)) & (df["year"].between(years[0], years[1]))]
-df_reshaped = df_filtered.pivot_table(
-    index="year", columns="genre", values="gross", aggfunc="sum", fill_value=0
-)
-df_reshaped = df_reshaped.sort_values(by="year", ascending=False)
+# Check if the dataset is empty after cleaning
+if df.empty:
+    st.error("No valid dates found in the dataset. Please check your data.")
+else:
+    # Extract valid min and max dates and convert them to Python datetime
+    min_date = df["Date"].min().to_pydatetime()
+    max_date = df["Date"].max().to_pydatetime()
 
+    # Debugging: Ensure min_date and max_date are valid
+    if min_date is None or max_date is None:
+        st.error("Date range could not be determined due to invalid data.")
+    else:
+        # Configure the slider with valid datetime objects
+        try:
+            date_range = st.slider(
+                "Date Range",
+                min_date,
+                max_date,
+                (min_date, min_date + pd.Timedelta(days=365 * 2).to_pytimedelta()),  # Default 2-year span
+                format="YYYY-MM-DD",
+            )
+        except Exception as e:
+            st.error(f"Error setting up the slider: {e}")
+            st.stop()
 
-# Display the data as a table using `st.dataframe`.
-st.dataframe(
-    df_reshaped,
-    use_container_width=True,
-    column_config={"year": st.column_config.TextColumn("Year")},
-)
+        # Show a multiselect widget with the entities
+        entities = st.multiselect(
+            "Entities",
+            df["Entity"].unique(),
+            df["Entity"].value_counts().head(10).index.tolist(),
+        )
 
-# Display the data as an Altair chart using `st.altair_chart`.
-df_chart = pd.melt(
-    df_reshaped.reset_index(), id_vars="year", var_name="genre", value_name="gross"
-)
-chart = (
-    alt.Chart(df_chart)
-    .mark_line()
-    .encode(
-        x=alt.X("year:N", title="Year"),
-        y=alt.Y("gross:Q", title="Gross earnings ($)"),
-        color="genre:N",
-    )
-    .properties(height=320)
-)
-st.altair_chart(chart, use_container_width=True)
+        # Filter the dataframe based on user input
+        df_filtered = df[
+            (df["Entity"].isin(entities)) &
+            (df["Date"].between(date_range[0], date_range[1]))
+        ]
 
+        # Debugging: Print the filtered dataframe
 
+        # Convert dates to weekly periods
+        df_filtered["Week"] = df_filtered["Date"].dt.to_period("W").apply(lambda x: x.start_time)
+
+        # Aggregate data: Count occurrences of each entity per week
+        df_reshaped = df_filtered.groupby(["Week", "Entity"]).size().unstack(fill_value=0)
+        df_reshaped = df_reshaped.sort_index(ascending=False)
+
+        # Display the data as a table
+        st.dataframe(
+            df_reshaped,
+            use_container_width=True,
+        )
+
+        # Prepare the data for charting
+        df_chart = pd.melt(
+            df_reshaped.reset_index(), id_vars="Week", var_name="Entity", value_name="Count"
+        )
+        chart = (
+            alt.Chart(df_chart)
+            .mark_line()
+            .encode(
+                x=alt.X("Week:T", title="Week"),
+                y=alt.Y("Count:Q", title="Count"),
+                color="Entity:N",
+            )
+            .properties(height=320)
+        )
+
+        # Display the data as a chart
+        st.altair_chart(chart, use_container_width=True)
