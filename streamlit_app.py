@@ -16,71 +16,12 @@ st.write(
     """
 )
 
-# Context and Significance
-st.subheader("The Rise of LLM-based Research Domain")
-st.write(
-    """
-    On November 30, 2022, OpenAI launched ChatGPT, a closed-source LLM as an 
-    interactive web-based application. In just two years, millions of users have adopted this tool for a 
-    wide array of tasks, including generating creative content, summarizing articles or essays, coding, language translations,
-    or conducting data analysis.
-    The immense popularity and impact of ChatGPT have spurred a wave of interest in LLMs across 
-    academic and professional domains, prompting studies on both theoretical underpinnings 
-    and practical applications of this technology.
-    """
-)
-
-# ArXiv Overview
-st.subheader("ArXiv Corpus")
-st.write(
-    """
-    Since ChatGPT's release, **537,482 papers** have been published on ArXiv domain, reflecting the 
-    rapid growth of scholarly contributions across mutitple disciplines. For those unfamiliar, ArXiv 
-    is an open-access archive hosting nearly **2.4 million scholarly articles** spanning fields such as: 
-    Physics, Mathematics, Computer Science, Quantitative Biology, Quantitative Finance, Statistics, Electrical Engineering, Systems Science, Economics.
-
-    With this app, we explore only LLM-related research trends.
-    """
-)
-
-st.write(
-    """
-    ### LLM-Related Research Domain
-
-    The "LLM-related research domain" encompasses a diverse range of concepts, frameworks, methodologies, and technologies centered on developing and applying LLMs. Below are the key categories that define this domain:
-
-    #### 1. Core Models and Architectures
-    Focus on designing the foundational structures of LLMs, including Transformer-based architectures, attention mechanisms, and scaling laws. Emphasize the theoretical and practical underpinnings that define a model’s capability.
-
-    #### 2. Learning Paradigms
-    Define methodologies that enable LLMs to adapt and generalize across tasks, such as few-shot, zero-shot, fine-tuning, and RLHF. Highlight approaches for improving task-specific performance without major architectural changes.
-
-    #### 3. Optimization Techniques
-    Explore strategies to enhance computational efficiency, scalability, and resource-friendliness, including quantization, pruning, and lightweight architectures (e.g., DistilBERT). Focus on making existing models more practical for deployment.
-
-    #### 4. Applications and Use Cases
-    Showcase real-world deployments of LLMs in tasks like conversational AI, Retrieval-Augmented Generation, and domain-specific automation. Emphasize the impact of LLMs across industries like healthcare, finance, and education.
-
-    #### 5. Societal Impacts and Ethics
-    Examine the societal implications of LLM deployment, including addressing issues of bias, fairness, transparency, and equitable access. Advocate for responsible and inclusive AI development practices.
-
-    #### 6. Infrastructure and Tools
-    Delve into the technical backbone that supports LLMs, such as APIs, libraries, deployment frameworks, and interoperability solutions. Ensure this category focuses on enabling efficient development and seamless integration of LLM systems.
-
-    #### 7. Evaluation and Benchmarks
-    Center on the frameworks, datasets, and metrics (e.g., GLUE, BLEU, BERTScore) that quantitatively assess model performance, robustness, fairness, and usability. Highlight the role of evaluation in driving iterative improvements.
-    """
-)
 
 
 # Topic Trends
 # Title
-import pandas as pd
-import streamlit as st
-import altair as alt
-
 # Title
-st.markdown("### Topic Trends per LLM-related Subdomains")
+st.markdown("### Topic Trends for LLM-related Subdomains")
 
 # Load the data from the real dataset
 @st.cache_data
@@ -175,9 +116,66 @@ else:
         df_additional_info = df_filtered[df_filtered["Human_Readable_Topic"].isin(selected_topics)]
 
         # Display the additional details in a table
-        st.markdown("### Save the Details about the Papers!")
+        st.markdown("### Export the Paper Details in the CSV file!")
         st.dataframe(df_additional_info, use_container_width=True)
 
+
+
+# Context and Significance
+st.subheader("The Rise of LLM-based Research Domain")
+st.write(
+    """
+    On November 30, 2022, OpenAI launched ChatGPT, a closed-source LLM as an 
+    interactive web-based application. In just two years, millions of users have adopted this tool for a 
+    wide array of tasks, including generating creative content, summarizing articles or essays, coding, language translations,
+    or conducting data analysis.
+    The immense popularity and impact of ChatGPT have spurred a wave of interest in LLMs across 
+    academic and professional domains, prompting studies on both theoretical underpinnings 
+    and practical applications of this technology.
+    """
+)
+
+# ArXiv Overview
+st.subheader("ArXiv Corpus")
+st.write(
+    """
+    Since ChatGPT's release, **537,482 papers** have been published on ArXiv domain, reflecting the 
+    rapid growth of scholarly contributions across mutitple disciplines. For those unfamiliar, ArXiv 
+    is an open-access archive hosting nearly **2.4 million scholarly articles** spanning fields such as: 
+    Physics, Mathematics, Computer Science, Quantitative Biology, Quantitative Finance, Statistics, Electrical Engineering, Systems Science, Economics.
+
+    With this app, we explore only LLM-related research trends.
+    """
+)
+
+st.write(
+    """
+    ### LLM-Related Research Domain
+
+    The "LLM-related research domain" encompasses a diverse range of concepts, frameworks, methodologies, and technologies centered on developing and applying LLMs. Below are the key categories that define this domain:
+
+    #### 1. Core Models and Architectures
+    Focus on designing the foundational structures of LLMs, including Transformer-based architectures, attention mechanisms, and scaling laws. Emphasize the theoretical and practical underpinnings that define a model’s capability.
+
+    #### 2. Learning Paradigms
+    Define methodologies that enable LLMs to adapt and generalize across tasks, such as few-shot, zero-shot, fine-tuning, and RLHF. Highlight approaches for improving task-specific performance without major architectural changes.
+
+    #### 3. Optimization Techniques
+    Explore strategies to enhance computational efficiency, scalability, and resource-friendliness, including quantization, pruning, and lightweight architectures (e.g., DistilBERT). Focus on making existing models more practical for deployment.
+
+    #### 4. Applications and Use Cases
+    Showcase real-world deployments of LLMs in tasks like conversational AI, Retrieval-Augmented Generation, and domain-specific automation. Emphasize the impact of LLMs across industries like healthcare, finance, and education.
+
+    #### 5. Societal Impacts and Ethics
+    Examine the societal implications of LLM deployment, including addressing issues of bias, fairness, transparency, and equitable access. Advocate for responsible and inclusive AI development practices.
+
+    #### 6. Infrastructure and Tools
+    Delve into the technical backbone that supports LLMs, such as APIs, libraries, deployment frameworks, and interoperability solutions. Ensure this category focuses on enabling efficient development and seamless integration of LLM systems.
+
+    #### 7. Evaluation and Benchmarks
+    Center on the frameworks, datasets, and metrics (e.g., GLUE, BLEU, BERTScore) that quantitatively assess model performance, robustness, fairness, and usability. Highlight the role of evaluation in driving iterative improvements.
+    """
+)
 
 
 # Purpose
