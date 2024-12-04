@@ -43,16 +43,48 @@ st.write(
     """
 )
 
-# Purpose
-st.subheader("About This App")
 st.write(
     """
-    This app provides an interactive tool to track and analyze **weekly trends** within 
+    ### LLM-Related Research Domain
+
+    The "LLM-related research domain" encompasses a diverse range of concepts, frameworks, methodologies, and technologies centered on developing and applying LLMs. Below are the key categories that define this domain:
+
+    #### 1. Core Models and Architectures
+    Focus on designing the foundational structures of LLMs, including Transformer-based architectures, attention mechanisms, and scaling laws. Emphasize the theoretical and practical underpinnings that define a model’s capability.
+
+    #### 2. Learning Paradigms
+    Define methodologies that enable LLMs to adapt and generalize across tasks, such as few-shot, zero-shot, fine-tuning, and RLHF. Highlight approaches for improving task-specific performance without major architectural changes.
+
+    #### 3. Optimization Techniques
+    Explore strategies to enhance computational efficiency, scalability, and resource-friendliness, including quantization, pruning, and lightweight architectures (e.g., DistilBERT). Focus on making existing models more practical for deployment.
+
+    #### 4. Applications and Use Cases
+    Showcase real-world deployments of LLMs in tasks like conversational AI, Retrieval-Augmented Generation, and domain-specific automation. Emphasize the impact of LLMs across industries like healthcare, finance, and education.
+
+    #### 5. Societal Impacts and Ethics
+    Examine the societal implications of LLM deployment, including addressing issues of bias, fairness, transparency, and equitable access. Advocate for responsible and inclusive AI development practices.
+
+    #### 6. Infrastructure and Tools
+    Delve into the technical backbone that supports LLMs, such as APIs, libraries, deployment frameworks, and interoperability solutions. Ensure this category focuses on enabling efficient development and seamless integration of LLM systems.
+
+    #### 7. Evaluation and Benchmarks
+    Center on the frameworks, datasets, and metrics (e.g., GLUE, BLEU, BERTScore) that quantitatively assess model performance, robustness, fairness, and usability. Highlight the role of evaluation in driving iterative improvements.
+    """
+)
+
+
+# Purpose
+st.subheader("The App")
+st.write(
+    """
+    This application provides an interactive tool to track and analyze **weekly trends** within 
     LLM-related research on the ArXiv platform between 2022-11-30 and 2024-11-29. By identifying shifting focus areas, 
     we aim to uncover valuable insights into the evolution of research themes and applications.
     """
 )
 
+# Per-week research articles
+st.markdown("### Number of Published LLM-related Articles per Week")
 # The Plot of the 2 years-weekly papers
 # Load the LLM-related dataset
 @st.cache_data
@@ -83,7 +115,6 @@ chart = (
         ]
     )
     .properties(
-        title="Number of Published LLM-related Articles per Week",
         height=400,
         width=800
     )
@@ -96,11 +127,15 @@ st.altair_chart(chart, use_container_width=True)
 
 
 
-# Code 3
-# Load the data from a CSV file
-import pandas as pd
-import streamlit as st
-import altair as alt
+
+
+st.markdown("### Entity Trends in LLM-Related Research Papers")
+
+st.write(
+    """
+    The following dashboard highlights trends in paper abstracts the top 500 entities related to LLM-domain over a defined timespan (2022 November–2024 November). You can explore its trends and interactions with related entities like **fine-tuning**, **embeddings**, and other model-related terminologies.
+    """
+)
 
 # Load the data from a CSV file
 @st.cache_data
@@ -111,12 +146,6 @@ def load_data():
 
 # Load the dataset
 df = load_data()
-
-st.write(
-    """
-    The following dashboard highlights trends in paper abstracts the top 500 entities related to large language models (LLMs) over a defined timespan (2022 November–2024 November). You can explore its trends and interactions with related entities like **fine-tuning**, **embeddings**, and other model-related terminologies.
-    """
-)
 
 # Parse the 'Date' column into datetime objects
 df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
@@ -195,31 +224,3 @@ else:
         # Display the data as a chart
         st.altair_chart(chart, use_container_width=True)
 
-st.write(
-    """
-    ### LLM-Related Research Domain
-
-    The "LLM-related research domain" encompasses a diverse range of concepts, frameworks, methodologies, and technologies centered on developing and applying LLMs. Below are the key categories that define this domain:
-
-    #### 1. Core Models and Architectures
-    Focus on designing the foundational structures of LLMs, including Transformer-based architectures, attention mechanisms, and scaling laws. Emphasize the theoretical and practical underpinnings that define a model’s capability.
-
-    #### 2. Learning Paradigms
-    Define methodologies that enable LLMs to adapt and generalize across tasks, such as few-shot, zero-shot, fine-tuning, and RLHF. Highlight approaches for improving task-specific performance without major architectural changes.
-
-    #### 3. Optimization Techniques
-    Explore strategies to enhance computational efficiency, scalability, and resource-friendliness, including quantization, pruning, and lightweight architectures (e.g., DistilBERT). Focus on making existing models more practical for deployment.
-
-    #### 4. Applications and Use Cases
-    Showcase real-world deployments of LLMs in tasks like conversational AI, Retrieval-Augmented Generation, and domain-specific automation. Emphasize the impact of LLMs across industries like healthcare, finance, and education.
-
-    #### 5. Societal Impacts and Ethics
-    Examine the societal implications of LLM deployment, including addressing issues of bias, fairness, transparency, and equitable access. Advocate for responsible and inclusive AI development practices.
-
-    #### 6. Infrastructure and Tools
-    Delve into the technical backbone that supports LLMs, such as APIs, libraries, deployment frameworks, and interoperability solutions. Ensure this category focuses on enabling efficient development and seamless integration of LLM systems.
-
-    #### 7. Evaluation and Benchmarks
-    Center on the frameworks, datasets, and metrics (e.g., GLUE, BLEU, BERTScore) that quantitatively assess model performance, robustness, fairness, and usability. Highlight the role of evaluation in driving iterative improvements.
-    """
-)
