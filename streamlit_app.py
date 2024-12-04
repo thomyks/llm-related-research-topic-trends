@@ -6,7 +6,7 @@ import streamlit as st
 st.set_page_config(page_title="LLM Topic Trends on ArXiv", page_icon="🤖")
 
 # Title
-st.title("Tracking LLM-based Research Trends")
+st.title("Tracking LLM-based Research Trends on ArXiv corpus")
 
 # Introduction
 st.write(
@@ -20,16 +20,10 @@ st.write(
 st.subheader("The Rise of LLM-based Research Domain")
 st.write(
     """
-    On November 30, 2022, OpenAI launched ChatGPT, a closed-source Large Language Model (LLM) as an 
+    On November 30, 2022, OpenAI launched ChatGPT, a closed-source LLM as an 
     interactive web-based application. In just two years, millions of users have adopted this tool for a 
-    wide array of tasks, including:
-    
-    - Generating creative content
-    - Summarizing articles or essays
-    - Coding
-    - Translating languages
-    - Conducting data analysis
-
+    wide array of tasks, including generating creative content, summarizing articles or essays, coding, language translations,
+    or conducting data analysis.
     The immense popularity and impact of ChatGPT have spurred a wave of interest in LLMs across 
     academic and professional domains, prompting studies on both theoretical underpinnings 
     and practical applications of this technology.
@@ -37,15 +31,15 @@ st.write(
 )
 
 # ArXiv Overview
-st.subheader("ArXiv: A Hub for Scholarly Knowledge")
+st.subheader("ArXiv Corpus")
 st.write(
     """
-    Since ChatGPT's release, **537,482 papers** have been published on ArXiv, reflecting the 
-    rapid growth of scholarly contributions across disciplines. For those unfamiliar, ArXiv 
+    Since ChatGPT's release, **537,482 papers** have been published on ArXiv domain, reflecting the 
+    rapid growth of scholarly contributions across mutitple disciplines. For those unfamiliar, ArXiv 
     is an open-access archive hosting nearly **2.4 million scholarly articles** spanning fields such as: 
     Physics, Mathematics, Computer Science, Quantitative Biology, Quantitative Finance, Statistics, Electrical Engineering, Systems Science, Economics.
 
-    With this app, we explore the intersection of LLM advancements and research trends across these diverse fields.
+    With this app, we explore only LLM-related research trends.
     """
 )
 
@@ -54,7 +48,7 @@ st.subheader("About This App")
 st.write(
     """
     This app provides an interactive tool to track and analyze **weekly trends** within 
-    LLM-related research on the ArXiv platform. By identifying shifting focus areas, 
+    LLM-related research on the ArXiv platform between 2022-11-30 and 2024-11-29. By identifying shifting focus areas, 
     we aim to uncover valuable insights into the evolution of research themes and applications.
     """
 )
