@@ -6,7 +6,7 @@ import streamlit as st
 st.set_page_config(page_title="LLM Topic Trends on ArXiv", page_icon="🤖", layout="wide")
 
 # Title
-st.title("Track and Export your favourite LLM-based Research Topic on ArXiv")
+st.title("Discover, Analyze, and Export Insights on Your Favorite LLM Research Topics from ArXiv.")
 
 section = st.sidebar.radio(
     "Go to",
@@ -92,19 +92,49 @@ if section == "Topic Trends":
             # Display trends for the selected subdomain
             st.markdown(f"### Topic Trends for Subdomain: **{tab}**")
 
-            # Create an interactive line chart with maximum width
+            # # Create an interactive line chart with maximum width
+            # chart = (
+            #     alt.Chart(df_grouped_filtered)
+            #     .mark_line()
+            #     .encode(
+            #         x=alt.X("Month_Start:T", title="Month Start"),
+            #         y=alt.Y("Monthly_Count:Q", title="Monthly Count"),
+            #         color=alt.Color("Human_Readable_Topic:N", title="Topics"),  # Different colors for each topic
+            #     )
+            #     .properties(
+            #         height=600, 
+            #         width=1400  # Use the full width of the container
+            #     )
+            # )
+            # Adjust the Topic Trends chart to ensure the legend is fully visible
             chart = (
                 alt.Chart(df_grouped_filtered)
                 .mark_line()
                 .encode(
                     x=alt.X("Month_Start:T", title="Month Start"),
                     y=alt.Y("Monthly_Count:Q", title="Monthly Count"),
-                    color=alt.Color("Human_Readable_Topic:N", title="Topics"),  # Different colors for each topic
+                    color=alt.Color(
+                        "Human_Readable_Topic:N",
+                        title="Topics",  # Add a title for the legend
+                        legend=alt.Legend(
+                            orient="right",  # Position the legend to the right
+                            titleFontSize=12,  # Adjust the font size of the legend title
+                            labelFontSize=10,  # Adjust the font size of the legend labels
+                            labelLimit=200,  # Increase the label limit to avoid truncation
+                            symbolLimit=50,  # Adjust the number of symbols displayed
+                            labelOverlap="greedy"  # Avoid overlapping of legend labels
+                        )
+                    )
                 )
                 .properties(
-                    height=600, 
-                    width=1400  # Use the full width of the container
+                    height=400,  # Set the height of the chart
+                    width=800,  # Set the width of the chart
                 )
+                .configure_legend(
+                    padding=10,  # Add padding around the legend
+                    cornerRadius=5  # Round the corners of the legend box
+                )
+                .interactive()  # Enable zoom and pan interactions
             )
             
 
