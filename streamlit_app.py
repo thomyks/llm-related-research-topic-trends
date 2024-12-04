@@ -6,7 +6,7 @@ import streamlit as st
 st.set_page_config(page_title="LLM Topic Trends on ArXiv", page_icon="🤖", layout="wide")
 
 # Title
-st.title("Tracking LLM-based Research Trends on ArXiv")
+st.title("Track and Export your favourite LLM-based Research Topic on ArXiv")
 
 section = st.sidebar.radio(
     "Go to",
@@ -130,7 +130,7 @@ if section == "Topic Trends":
     
         st.write(
         """
-        ### LLM-Related Research Domain
+        ### Definition of LLM-Related Research Domain
 
         The "LLM-related research domain" encompasses a diverse range of concepts, frameworks, methodologies, and technologies centered on developing and applying LLMs. Below are the key categories that define this domain:
 
