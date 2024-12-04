@@ -126,10 +126,9 @@ chart = (
 st.altair_chart(chart, use_container_width=True)
 
 
-
 # Topic Trends
 # Title
-st.markdown("### Topic Trends per Subdomain")
+st.markdown("### Topic Trends per LLM-related Subdomains")
 
 # Load the data from the real dataset
 @st.cache_data
@@ -154,7 +153,8 @@ else:
     tab = st.radio(
         "Select Subdomain",
         options=subdomains,
-        horizontal=True  # This creates a navigation-like bar
+        horizontal=True,  # This creates a navigation-like bar
+        key="subdomain_radio"  # Add a unique key
     )
 
     # Filter data based on the selected subdomain
@@ -170,22 +170,41 @@ else:
         # Count articles per topic per week
         df_grouped = df_filtered.groupby(["Week_Start", "Human_Readable_Topic"]).size().reset_index(name="Weekly_Count")
 
+        # Allow the user to toggle topics
+        topics = df_grouped["Human_Readable_Topic"].unique()
+
+        # Select first 10 topics as default
+        default_topics = topics[:10] if len(topics) > 10 else topics
+
+        selected_topics = st.multiselect(
+            "Select Topics to Display",
+            options=topics,
+            default=default_topics,  # Default to the first 10 topics or all if fewer than 10
+            key="topic_multiselect"  # Add a unique key for the multiselect widget
+        )
+
+        # Filter the grouped data based on selected topics
+        df_grouped_filtered = df_grouped[df_grouped["Human_Readable_Topic"].isin(selected_topics)]
+
         # Display trends for the selected subdomain
         st.markdown(f"### Topic Trends for Subdomain: **{tab}**")
 
-        # Create an interactive line chart
+        # Create an interactive line chart with maximum width
         chart = (
-            alt.Chart(df_grouped)
+            alt.Chart(df_grouped_filtered)
             .mark_line()
             .encode(
                 x=alt.X("Week_Start:T", title="Week Start"),
                 y=alt.Y("Weekly_Count:Q", title="Weekly Count"),
                 color=alt.Color("Human_Readable_Topic:N", title="Topics"),  # Different colors for each topic
             )
-            .properties(height=600)
+            .properties(
+                height=600, 
+                width="container"  # Use the full width of the container
+            )
         )
 
-        # Display the chart
+        # Display the chart as wide as possible
         st.altair_chart(chart, use_container_width=True)
 
         # Display detailed insights
@@ -193,7 +212,7 @@ else:
         st.write(f"Showing detailed trends for topics under **{tab}**.")
 
         # Add a data table for granular details
-        st.dataframe(df_grouped, use_container_width=True)
+        st.dataframe(df_grouped_filtered, use_container_width=True)
 
 
 
