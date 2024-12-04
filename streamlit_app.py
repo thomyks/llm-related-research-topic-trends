@@ -118,10 +118,6 @@ st.write(
     """
 )
 
-
-
-
-
 # Parse the 'Date' column into datetime objects
 df["Date"] = pd.to_datetime(df["Date"], errors="coerce")
 
@@ -198,3 +194,32 @@ else:
 
         # Display the data as a chart
         st.altair_chart(chart, use_container_width=True)
+
+st.write(
+    """
+    ### LLM-Related Research Domain
+
+    The "LLM-related research domain" encompasses a diverse range of concepts, frameworks, methodologies, and technologies centered on developing and applying LLMs. Below are the key categories that define this domain:
+
+    #### 1. Core Models and Architectures
+    Focus on designing the foundational structures of LLMs, including Transformer-based architectures, attention mechanisms, and scaling laws. Emphasize the theoretical and practical underpinnings that define a model’s capability.
+
+    #### 2. Learning Paradigms
+    Define methodologies that enable LLMs to adapt and generalize across tasks, such as few-shot, zero-shot, fine-tuning, and RLHF. Highlight approaches for improving task-specific performance without major architectural changes.
+
+    #### 3. Optimization Techniques
+    Explore strategies to enhance computational efficiency, scalability, and resource-friendliness, including quantization, pruning, and lightweight architectures (e.g., DistilBERT). Focus on making existing models more practical for deployment.
+
+    #### 4. Applications and Use Cases
+    Showcase real-world deployments of LLMs in tasks like conversational AI, Retrieval-Augmented Generation, and domain-specific automation. Emphasize the impact of LLMs across industries like healthcare, finance, and education.
+
+    #### 5. Societal Impacts and Ethics
+    Examine the societal implications of LLM deployment, including addressing issues of bias, fairness, transparency, and equitable access. Advocate for responsible and inclusive AI development practices.
+
+    #### 6. Infrastructure and Tools
+    Delve into the technical backbone that supports LLMs, such as APIs, libraries, deployment frameworks, and interoperability solutions. Ensure this category focuses on enabling efficient development and seamless integration of LLM systems.
+
+    #### 7. Evaluation and Benchmarks
+    Center on the frameworks, datasets, and metrics (e.g., GLUE, BLEU, BERTScore) that quantitatively assess model performance, robustness, fairness, and usability. Highlight the role of evaluation in driving iterative improvements.
+    """
+)
