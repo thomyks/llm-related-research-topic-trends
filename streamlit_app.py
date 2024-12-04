@@ -135,7 +135,7 @@ st.markdown("### Topic Trends per Subdomain")
 @st.cache_data
 def load_data():
     # Replace with the uploaded file path
-    df = pd.read_csv("data/First_step_clustering_results_categorized_with_llm-data.csv")
+    df = pd.read_csv("data/First_step_clustering_results_categorized_with_llm.csv")
     return df
 
 # Load the dataset
