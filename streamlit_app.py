@@ -127,8 +127,77 @@ st.altair_chart(chart, use_container_width=True)
 
 
 
+# Topic Trends
+# Title
+st.markdown("### Topic Trends per Subdomain")
+
+# Load the data from the real dataset
+@st.cache_data
+def load_data():
+    # Replace with the uploaded file path
+    df = pd.read_csv("data/First_step_clustering_results_categorized_with_llm-data.csv")
+    return df
+
+# Load the dataset
+df = load_data()
+
+# Parse the 'update_date' column into datetime objects
+df["update_date"] = pd.to_datetime(df["update_date"], errors="coerce")
+
+# Ensure the dataset is not empty after parsing
+if df.empty:
+    st.error("No valid data found in the dataset. Please check your data.")
+else:
+    # Create a navigation bar with tabs for each subdomain
+    subdomains = df["Categories"].unique()
+
+    tab = st.radio(
+        "Select Subdomain",
+        options=subdomains,
+        horizontal=True  # This creates a navigation-like bar
+    )
+
+    # Filter data based on the selected subdomain
+    df_filtered = df[df["Categories"] == tab]
+
+    # Check if the filtered dataset is empty
+    if df_filtered.empty:
+        st.warning(f"No data available for the selected subdomain: {tab}.")
+    else:
+        # Add a column for weekly periods
+        df_filtered["Week_Start"] = df_filtered["update_date"].dt.to_period("W").apply(lambda x: x.start_time)
+
+        # Count articles per topic per week
+        df_grouped = df_filtered.groupby(["Week_Start", "Human_Readable_Topic"]).size().reset_index(name="Weekly_Count")
+
+        # Display trends for the selected subdomain
+        st.markdown(f"### Topic Trends for Subdomain: **{tab}**")
+
+        # Create an interactive line chart
+        chart = (
+            alt.Chart(df_grouped)
+            .mark_line()
+            .encode(
+                x=alt.X("Week_Start:T", title="Week Start"),
+                y=alt.Y("Weekly_Count:Q", title="Weekly Count"),
+                color=alt.Color("Human_Readable_Topic:N", title="Topics"),  # Different colors for each topic
+            )
+            .properties(height=600)
+        )
+
+        # Display the chart
+        st.altair_chart(chart, use_container_width=True)
+
+        # Display detailed insights
+        st.markdown("### Subdomain and Topic Details")
+        st.write(f"Showing detailed trends for topics under **{tab}**.")
+
+        # Add a data table for granular details
+        st.dataframe(df_grouped, use_container_width=True)
 
 
+
+# Entity Trends
 st.markdown("### Entity Trends in LLM-Related Research Papers")
 
 st.write(
