@@ -3,10 +3,27 @@ import pandas as pd
 import streamlit as st
 
 # Show the page title and description.
-st.set_page_config(page_title="LLM Topic Trends on ArXiv", page_icon="🤖")
+st.set_page_config(page_title="LLM Topic Trends on ArXiv", page_icon="🤖", layout="wide")
 
 # Title
-st.title("Tracking LLM-based Research Trends on ArXiv corpus")
+st.title("Tracking LLM-based Research Trends on ArXiv")
+
+section = st.sidebar.radio(
+    "Go to",
+    [ "ArXiv Overview", "LLM-Related Research", "Topic Trends", "Entity Trends"],
+    index=0
+)
+
+# Sidebar Information
+st.sidebar.markdown("### About this App")
+st.sidebar.write(
+    """
+    This application provides an interactive tool to track and analyze **weekly trends** within 
+    LLM-related research on the ArXiv platform between 2022-11-30 and 2024-11-29. By identifying shifting focus areas, 
+    we aim to uncover valuable insights into the evolution of LLM-related doomain, showcasing topics and entitites.
+    """
+)
+
 
 # Introduction
 st.write(
@@ -112,6 +129,7 @@ else:
 
         # Filter the original data to include rows with selected topics
         df_additional_info = df_filtered[df_filtered["Human_Readable_Topic"].isin(selected_topics)]
+        
 
         # Display the additional details in a table
         st.markdown("### Export the Paper Details in the CSV file!")
@@ -176,15 +194,7 @@ st.write(
 )
 
 
-# Purpose
-st.subheader("The App")
-st.write(
-    """
-    This application provides an interactive tool to track and analyze **weekly trends** within 
-    LLM-related research on the ArXiv platform between 2022-11-30 and 2024-11-29. By identifying shifting focus areas, 
-    we aim to uncover valuable insights into the evolution of research themes and applications.
-    """
-)
+
 
 # Per-week research articles
 st.markdown("### Number of Published LLM-related Articles per Week")
