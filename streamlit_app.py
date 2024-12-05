@@ -9,9 +9,8 @@ st.set_page_config(
     page_title="LLM Research Trends",
     page_icon="🤖",
     layout="wide",
-    menu_items={'🔍 Explore and Extract LLM Trends!"
+    menu_items={"🔍 Explore and Extract LLM Trends!"
 }
-
 )
 
 # Add custom meta tags for SEO and previews
