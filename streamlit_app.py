@@ -29,7 +29,7 @@ if section == "Topic Trends":
     # Topic Trends
     # Title
     # Title
-    st.markdown("### Topic Trends for LLM-related Subdomains")
+    st.markdown("### Topic Trends Across LLM-Related Subdomains")
 
     # Load the data from the real dataset
     @st.cache_data
@@ -82,7 +82,7 @@ if section == "Topic Trends":
             selected_topics = st.multiselect(
                 "Select Topics to Display",
                 options=topics,
-                default=top_topics,  # Default to the top 10 topics
+                default=top_topics,  # Default to the top 5 topics
                 key=f"topic_multiselect_{tab}"  # Ensure the key is unique by appending the tab name
             )
 
@@ -142,8 +142,8 @@ if section == "Topic Trends":
             st.altair_chart(chart, use_container_width=True)
 
             # Display detailed insights
-            st.markdown("### Subdomain and Topic Details")
-            st.write(f"Showing detailed trends for topics under **{tab}**.")
+            st.markdown("### Monthly Trends for selected Topic Details")
+            st.write(f"Showing monthly trends for topics under subdomain: **{tab}**.")
 
             # Add a data table for granular details
             st.dataframe(df_grouped_filtered, use_container_width=True)
@@ -155,6 +155,22 @@ if section == "Topic Trends":
 
             # Display the additional details in a table
             st.markdown("### Export the Paper Details in the CSV file!")
+            # Dynamically update the markdown with selected topics
+            if selected_topics:
+                selected_topics_text = ", ".join(selected_topics)
+                st.markdown(f"### Export the Paper Details in the CSV file!")
+                st.write(f"Selected Topics: {selected_topics_text}")
+            else:
+                st.markdown("### Export the Paper Details in the CSV file!")
+                st.write("No topics have been selected.")
+            st.write(f"Export detailed information about research paper, including links, dates, titles, abstracts, topic label, categories, submitter, and monthly trends for topics under the subdomain: **{tab}**.")
+
+
+
+
+
+
+
             st.dataframe(df_additional_info, use_container_width=True, column_config={"link":st.column_config.LinkColumn()})
 
         st.write(
