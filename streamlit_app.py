@@ -149,15 +149,14 @@ if section == "Topic Trends":
             st.dataframe(df_grouped_filtered, use_container_width=True)
 
 
-
             # Filter the original data to include rows with selected topics
             df_additional_info = df_filtered[df_filtered["Human_Readable_Topic"].isin(selected_topics)]
             
 
             # Display the additional details in a table
             st.markdown("### Export the Paper Details in the CSV file!")
-            st.dataframe(df_additional_info, use_container_width=True)
-    
+            st.dataframe(df_additional_info, use_container_width=True, column_config={"link":st.column_config.LinkColumn()})
+
         st.write(
         """
         ### Categories of LLM-Related Research Domain
