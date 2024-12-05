@@ -1,2 +1,1 @@
-#📚 LLM-based Research Domain Analysis 
-An App showcasing insights into research domains.
+# LLM Research Overview: An App for Exploring and Extracting Insights from LLM-related Research
