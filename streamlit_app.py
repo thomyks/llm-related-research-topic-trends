@@ -221,8 +221,6 @@ if section == "Topic Trends":
 
 
 
-
-
 # Main Section Rendering
 elif section == "High-level overview of LLM-related Research":
     # Introduction
