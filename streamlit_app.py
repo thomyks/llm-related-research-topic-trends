@@ -14,16 +14,14 @@ st.set_page_config(
     }
 )
 
-# Add custom meta tags for SEO and previews
-components.html("""
-    <meta name="description" content="🔍 Explore LLM Trends! Extract insights to uncover LLM evolution.">
-    <meta property="og:title" content="LLM Topic Trends on ArXiv">
-    <meta property="og:description" content="🔍 Explore LLM Trends! Extract insights to uncover LLM evolution.">
-    <meta property="og:image" content="https://example.com/path-to-your-preview-image.png"> <!-- Replace with your image URL -->
-    <meta property="og:url" content="https://llmtrends.streamlit.app"> <!-- Replace with your app URL -->
-""", height=0)
-
-
+# # Add custom meta tags for SEO and previews
+# components.html("""
+#     <meta name="description" content="🔍 Explore LLM Trends! Extract insights to uncover LLM evolution.">
+#     <meta property="og:title" content="LLM Topic Trends on ArXiv">
+#     <meta property="og:description" content="🔍 Explore LLM Trends! Extract insights to uncover LLM evolution.">
+#     <meta property="og:image" content="https://example.com/path-to-your-preview-image.png"> <!-- Replace with your image URL -->
+#     <meta property="og:url" content="https://llmtrends.streamlit.app"> <!-- Replace with your app URL -->
+# """, height=0)
 # Title
 st.title("Discover, Analyze, and Export Insights on Your Favorite LLM Research Topics")
 
