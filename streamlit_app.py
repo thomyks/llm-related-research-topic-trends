@@ -2,10 +2,24 @@ import altair as alt
 import pandas as pd
 import streamlit as st
 import plotly.express as px
+import streamlit.components.v1 as components
 
+# Correct order for set_page_config
+st.set_page_config(
+    page_title="LLM Research Trends",
+    page_icon="🤖",
+    layout="wide"
+)
 
-# Show the page title and description.
-st.set_page_config(page_title="LLM Topic Trends on ArXiv", page_icon="🤖", layout="wide")
+# Add custom meta tags for SEO and previews
+components.html("""
+    <meta name="description" content="🔍 Explore LLM Trends! Extract insights to uncover LLM evolution.">
+    <meta property="og:title" content="LLM Topic Trends on ArXiv">
+    <meta property="og:description" content="🔍 Explore LLM Trends! Extract insights to uncover LLM evolution.">
+    <meta property="og:image" content="https://example.com/path-to-your-preview-image.png"> <!-- Replace with your image URL -->
+    <meta property="og:url" content="https://llmtrends.streamlit.app"> <!-- Replace with your app URL -->
+""", height=0)
+
 
 # Title
 st.title("Discover, Analyze, and Export Insights on Your Favorite LLM Research Topics")
@@ -34,7 +48,7 @@ if section == "Topic Trends":
     @st.cache_data
     def load_data():
         # Replace with the uploaded file path
-        df = pd.read_csv("data/Concatenated_clustering_results_with_llm.csv")
+        df = pd.read_csv("data/LLM_data.csv")
         return df
 
     # Load the dataset
@@ -194,7 +208,7 @@ if section == "Topic Trends":
     st.markdown("### Hierarchical Topic Overview of the LLM-based Research Domains")
 
     # Load data from the CSV file
-    df = pd.read_csv("data/Concatenated_clustering_results_with_llm.csv")
+    df = pd.read_csv("data/LLM_data.csv")
 
     # Ensure the necessary columns exist in the dataset
     if "Categories" in df.columns and "Human_Readable_Topic" in df.columns:
@@ -263,7 +277,7 @@ elif section == "High-level overview of LLM-related Research":
     # Load the LLM-related dataset
     @st.cache_data
     def load_llm_data():
-        df_llm = pd.read_csv("data/filtered_dataset.csv", parse_dates=["update_date"])
+        df_llm = pd.read_csv("data/LLM_domain.csv", parse_dates=["update_date"])
         return df_llm
 
     df_llm = load_llm_data()
@@ -298,34 +312,6 @@ elif section == "High-level overview of LLM-related Research":
 
     # Display the chart in the Streamlit app
     st.altair_chart(chart, use_container_width=True)
-
-
-
-    # Example data for a sunburst chart
-    data = {
-        "Region": ["North America", "North America", "North America", "Europe", "Europe", "Europe", "Asia", "Asia"],
-        "Country": ["USA", "USA", "Canada", "Germany", "Germany", "France", "China", "India"],
-        "City": ["New York", "San Francisco", "Toronto", "Berlin", "Munich", "Paris", "Beijing", "Mumbai"],
-        "Value": [100, 50, 60, 70, 40, 90, 110, 120],
-    }
-
-    # Convert data to a DataFrame
-    df = pd.DataFrame(data)
-
-    # Create the sunburst chart
-    fig = px.sunburst(
-        df,
-        path=["Region", "Country", "City"],
-        values="Value",
-        title="Sunburst Chart Example",
-    )
-
-    # Display the chart in Streamlit
-    st.plotly_chart(fig)
-
-
-
-
 
 # # Topic Trends
 # # Title
