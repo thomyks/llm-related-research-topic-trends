@@ -8,7 +8,10 @@ import streamlit.components.v1 as components
 st.set_page_config(
     page_title="LLM Research Trends",
     page_icon="🤖",
-    layout="wide"
+    layout="wide",
+    menu_items={'🔍 Explore and Extract LLM Trends!"
+}
+
 )
 
 # Add custom meta tags for SEO and previews
