@@ -1,6 +1,8 @@
 import altair as alt
 import pandas as pd
 import streamlit as st
+import plotly.express as px
+
 
 # Show the page title and description.
 st.set_page_config(page_title="LLM Topic Trends on ArXiv", page_icon="🤖", layout="wide")
@@ -10,24 +12,21 @@ st.title("Discover, Analyze, and Export Insights on Your Favorite LLM Research T
 
 section = st.sidebar.radio(
     "Go to",
-    [ "Topic Trends", "ArXiv Overview", "Entity Trends"],
+    [ "Topic Trends", "High-level overview of LLM-related Research", "Entity Trends"],
     index=0
 )
 
 # Sidebar Information
 st.sidebar.markdown("### About this App")
 st.sidebar.write(
-    """
-    This application provides an interactive tool to track and analyze weekly trends in research on the ArXiv platform from November 30, 2022, to November 29, 2024. 
-    By identifying shifting focus areas, it offers valuable insights into the evolution of this rapidly developing field, highlighting key topics across related subdomains and entities.
+    """In an era of rapid advancements in large language model (LLM) research, keeping up with the ever-expanding flood of information can feel overwhelming, like navigating an uncharted forest with no clear path. 
+    This app serves as an interactive tool to track and analyze weekly research trends on the ArXiv platform from November 30, 2022, to November 29, 2024. By uncovering shifting focus areas, it provides valuable insights into the evolution of this dynamic field, spotlighting key topics across related subdomains and entities.
     """
 )
 
 
 
 if section == "Topic Trends":
-    # Topic Trends
-    # Title
     # Title
     st.markdown("### Topic Trends Across LLM-Related Subdomains")
 
@@ -151,11 +150,7 @@ if section == "Topic Trends":
 
             # Filter the original data to include rows with selected topics
             df_additional_info = df_filtered[df_filtered["Human_Readable_Topic"].isin(selected_topics)]
-            
-
-            # Display the additional details in a table
-            st.markdown("### Export the Paper Details in the CSV file!")
-            # Dynamically update the markdown with selected topics
+                        # Dynamically update the markdown with selected topics
             if selected_topics:
                 selected_topics_text = ", ".join(selected_topics)
                 st.markdown(f"### Export the Paper Details in the CSV file!")
@@ -164,12 +159,6 @@ if section == "Topic Trends":
                 st.markdown("### Export the Paper Details in the CSV file!")
                 st.write("No topics have been selected.")
             st.write(f"Export detailed information about research paper, including links, dates, titles, abstracts, topic label, categories, submitter, and monthly trends for topics under the subdomain: **{tab}**.")
-
-
-
-
-
-
 
             st.dataframe(df_additional_info, use_container_width=True, column_config={"link":st.column_config.LinkColumn()})
 
@@ -201,11 +190,41 @@ if section == "Topic Trends":
         Center on the frameworks, datasets, and metrics (e.g., GLUE, BLEU, BERTScore) that quantitatively assess model performance, robustness, fairness, and usability. Highlight the role of evaluation in driving iterative improvements.
         """
     )
+        # Title for the chart
+    st.markdown("### Hierarchical Topic Overview of the LLM-based Research Domains")
+
+    # Load data from the CSV file
+    df = pd.read_csv("data/Concatenated_clustering_results_with_llm.csv")
+
+    # Ensure the necessary columns exist in the dataset
+    if "Categories" in df.columns and "Human_Readable_Topic" in df.columns:
+        # Calculate the value column as the count of each 'Human_Readable_Topic' within a 'Category'
+        value_df = (
+            df.groupby(["Categories", "Human_Readable_Topic"])
+            .size()
+            .reset_index(name="Value")
+        )
+
+        # Create the sunburst chart
+        fig = px.sunburst(
+            value_df,
+            path=["Categories", "Human_Readable_Topic"],
+            values="Value",
+            width=800,  # Increase width
+            height=800  # Increase height
+        )
+
+        # Display the chart
+        st.plotly_chart(fig, use_container_width=True)
+    else:
+        st.error("The required columns ('Categories', 'Human_Readable_Topic') are missing in the dataset.")
+
+
 
 
 
 # Main Section Rendering
-elif section == "ArXiv Overview":
+elif section == "High-level overview of LLM-related Research":
     # Introduction
     st.write(
         """
@@ -215,7 +234,7 @@ elif section == "ArXiv Overview":
     )
 
     # Context and Significance
-    st.subheader("The Rise of LLM-based Research Domain")
+    st.subheader("The Rise of LLM-based Research")
     st.write(
         """
         On November 30, 2022, OpenAI launched ChatGPT, a closed-source LLM as an 
@@ -229,7 +248,7 @@ elif section == "ArXiv Overview":
     )
 
     # ArXiv Overview
-    st.subheader("ArXiv Corpus")
+    st.subheader("LLM-based Research on ArXiv Corpus")
     st.write(
         """
         Since ChatGPT's release, **537,482 papers** have been published on ArXiv domain, reflecting the 
@@ -237,18 +256,11 @@ elif section == "ArXiv Overview":
         is an open-access archive hosting nearly **2.4 million scholarly articles** spanning fields such as: 
         Physics, Mathematics, Computer Science, Quantitative Biology, Quantitative Finance, Statistics, Electrical Engineering, Systems Science, Economics.
 
-        With this app, we explore only LLM-related research trends.
         """
     )
 
-
-
-
-
-
-elif section == "LLM Trends":
     # Per-week research articles
-    st.markdown("### Number of Published LLM-related Articles per Week")
+    st.markdown("### Number of Published LLM-related Articles on ArXiv per Week")
     # The Plot of the 2 years-weekly papers
     # Load the LLM-related dataset
     @st.cache_data
@@ -288,6 +300,33 @@ elif section == "LLM Trends":
 
     # Display the chart in the Streamlit app
     st.altair_chart(chart, use_container_width=True)
+
+
+
+    # Example data for a sunburst chart
+    data = {
+        "Region": ["North America", "North America", "North America", "Europe", "Europe", "Europe", "Asia", "Asia"],
+        "Country": ["USA", "USA", "Canada", "Germany", "Germany", "France", "China", "India"],
+        "City": ["New York", "San Francisco", "Toronto", "Berlin", "Munich", "Paris", "Beijing", "Mumbai"],
+        "Value": [100, 50, 60, 70, 40, 90, 110, 120],
+    }
+
+    # Convert data to a DataFrame
+    df = pd.DataFrame(data)
+
+    # Create the sunburst chart
+    fig = px.sunburst(
+        df,
+        path=["Region", "Country", "City"],
+        values="Value",
+        title="Sunburst Chart Example",
+    )
+
+    # Display the chart in Streamlit
+    st.plotly_chart(fig)
+
+
+
 
 
 # # Topic Trends
