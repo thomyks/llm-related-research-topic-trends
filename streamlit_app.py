@@ -53,140 +53,132 @@ if section == "Topic Trends":
 
     # Load the dataset
     df = load_data()
-
     # Ensure the necessary columns exist in the dataset
     if "Categories" in df.columns and "Subdomain" in df.columns and "Human_Readable_Topic" in df.columns:
 
         # List of available categories (domains)
         available_categories = df["Categories"].unique().tolist()
         
-        # Step 1: Create checkboxes for domain (Categories) selection
-        selected_categories = []
-        st.markdown("### Select LLM-related Domain/s")
-        for category in available_categories:
-            if st.checkbox(category):  # Default is selected
-                selected_categories.append(category)
+        # Create columns layout for domain (Categories) and subdomain (Subdomain) selection
+        col1, col2 = st.columns(2)
 
-        # Filter data based on the selected categories
-        df_filtered = df[df["Categories"].isin(selected_categories)]
-        
-        # Check if the filtered dataset is empty
-        if df_filtered.empty:
-            st.warning(f"Select a Domain! {', '.join(selected_categories)}")
-        else:
-            # Step 2: Now create checkboxes for subdomain (Subdomain) selection
-            available_subdomains = df_filtered["Subdomain"].unique().tolist()
-            
-            selected_subdomains = []
+        with col1:
+            st.markdown("### Select LLM-related Domain/s")
+            selected_categories = []
+            for category in available_categories:
+                if st.checkbox(category, value=False, key=category):  # Default is not selected
+                    selected_categories.append(category)
+
+        with col2:
             st.markdown("### Select Subdomain(s)")
+            available_subdomains = df[df["Categories"].isin(selected_categories)]["Subdomain"].unique().tolist()
+            selected_subdomains = []
             for subdomain in available_subdomains:
-                if st.checkbox(subdomain):  # Default is selected
+                if st.checkbox(subdomain, value=False, key=subdomain):  # Default is not selected
                     selected_subdomains.append(subdomain)
 
-            # Further filter the data based on the selected subdomains
-            df_subdomain_filtered = df_filtered[df_filtered["Subdomain"].isin(selected_subdomains)]
-            
-            # Check if the filtered dataset for subdomains is empty
-            if df_subdomain_filtered.empty:
-                st.warning(f"Select a Subdomain: {', '.join(selected_subdomains)}")
-            else:
-                # Step 3: Topic Trends Section
-                st.markdown(f"### Topic Trends for Subdomain(s): {', '.join(selected_subdomains)}")
+        # Filter data based on the selected categories and subdomains
+        df_filtered = df[df["Categories"].isin(selected_categories)]
+        df_subdomain_filtered = df_filtered[df_filtered["Subdomain"].isin(selected_subdomains)]
 
-                # Parse the 'update_date' column into datetime objects
-                df_subdomain_filtered["update_date"] = pd.to_datetime(df_subdomain_filtered["update_date"], errors="coerce")
+        # Check if the filtered dataset is empty
+        if df_subdomain_filtered.empty:
+            st.warning(f"No data available for the selected domain(s): {', '.join(selected_categories)} and subdomain(s): {', '.join(selected_subdomains)}.")
+        else:
+            # Step 3: Topic Trends Section
+            st.markdown(f"### Topic Trends for Subdomain(s): {', '.join(selected_subdomains)}")
 
-                # Add a column for monthly periods
-                df_subdomain_filtered["Month_Start"] = df_subdomain_filtered["update_date"].dt.to_period("M").apply(lambda x: x.start_time)
+            # Parse the 'update_date' column into datetime objects
+            df_subdomain_filtered["update_date"] = pd.to_datetime(df_subdomain_filtered["update_date"], errors="coerce")
 
-                # Count articles per topic per month
-                df_grouped = df_subdomain_filtered.groupby(["Month_Start", "Human_Readable_Topic"]).size().reset_index(name="Monthly_Count")
+            # Add a column for monthly periods
+            df_subdomain_filtered["Month_Start"] = df_subdomain_filtered["update_date"].dt.to_period("M").apply(lambda x: x.start_time)
 
-                # Get the total count for each topic to determine the top 10 topics
-                topic_totals = df_grouped.groupby("Human_Readable_Topic")["Monthly_Count"].sum().reset_index()
-                top_topics = topic_totals.sort_values(by="Monthly_Count", ascending=False)["Human_Readable_Topic"].head(5).tolist()
+            # Count articles per topic per month
+            df_grouped = df_subdomain_filtered.groupby(["Month_Start", "Human_Readable_Topic"]).size().reset_index(name="Monthly_Count")
 
-                # Allow the user to toggle topics with a unique key
-                topics = df_grouped["Human_Readable_Topic"].unique()
+            # Get the total count for each topic to determine the top 10 topics
+            topic_totals = df_grouped.groupby("Human_Readable_Topic")["Monthly_Count"].sum().reset_index()
+            top_topics = topic_totals.sort_values(by="Monthly_Count", ascending=False)["Human_Readable_Topic"].head(5).tolist()
 
-                selected_topics = st.multiselect(
-                    "Select Topics to Display",
-                    options=topics,
-                    default=top_topics,  # Default to the top 5 topics
-                    key=f"topic_multiselect_{'_'.join(selected_categories)}_{'_'.join(selected_subdomains)}"  # Unique key for each selection
-                )
+            # Allow the user to toggle topics with a unique key
+            topics = df_grouped["Human_Readable_Topic"].unique()
 
-                # Filter the grouped data based on selected topics
-                df_grouped_filtered = df_grouped[df_grouped["Human_Readable_Topic"].isin(selected_topics)]
+            selected_topics = st.multiselect(
+                "Select Topics to Display",
+                options=topics,
+                default=top_topics,  # Default to the top 5 topics
+                key=f"topic_multiselect_{'_'.join(selected_categories)}_{'_'.join(selected_subdomains)}"  # Unique key for each selection
+            )
 
-                # Create an interactive line chart
-                chart = (
-                    alt.Chart(df_grouped_filtered)
-                    .mark_line()
-                    .encode(
-                        x=alt.X("Month_Start:T", title="Month Start"),
-                        y=alt.Y("Monthly_Count:Q", title="Monthly Count"),
-                        color=alt.Color(
-                            "Human_Readable_Topic:N",
-                            title="Topics",  # Add a title for the legend
-                            legend=alt.Legend(
-                                orient="right",  # Position the legend to the right
-                                titleFontSize=12,  # Adjust the font size of the legend title
-                                labelFontSize=10,  # Adjust the font size of the legend labels
-                                labelLimit=200,  # Increase the label limit to avoid truncation
-                                symbolLimit=50,  # Adjust the number of symbols displayed
-                                labelOverlap="greedy"  # Avoid overlapping of legend labels
-                            )
+            # Filter the grouped data based on selected topics
+            df_grouped_filtered = df_grouped[df_grouped["Human_Readable_Topic"].isin(selected_topics)]
+
+            # Create an interactive line chart
+            chart = (
+                alt.Chart(df_grouped_filtered)
+                .mark_line()
+                .encode(
+                    x=alt.X("Month_Start:T", title="Month Start"),
+                    y=alt.Y("Monthly_Count:Q", title="Monthly Count"),
+                    color=alt.Color(
+                        "Human_Readable_Topic:N",
+                        title="Topics",  # Add a title for the legend
+                        legend=alt.Legend(
+                            orient="right",  # Position the legend to the right
+                            titleFontSize=12,  # Adjust the font size of the legend title
+                            labelFontSize=10,  # Adjust the font size of the legend labels
+                            labelLimit=200,  # Increase the label limit to avoid truncation
+                            symbolLimit=50,  # Adjust the number of symbols displayed
+                            labelOverlap="greedy"  # Avoid overlapping of legend labels
                         )
                     )
-                    .properties(
-                        height=400,  # Set the height of the chart
-                        width=800,  # Set the width of the chart
-                    )
-                    .configure_legend(
-                        padding=10,  # Add padding around the legend
-                        cornerRadius=5  # Round the corners of the legend box
-                    )
-                    .interactive()  # Enable zoom and pan interactions
                 )
-
-                # Display the chart
-                st.altair_chart(chart, use_container_width=True)
-
-                # Display detailed insights
-                st.markdown("### Monthly Trends for selected Topic Details")
-                st.write(f"Showing monthly trends for topics under subdomain(s): {', '.join(selected_subdomains)}.")
-                
-
-                # Add a data table for granular details
-                st.dataframe(df_grouped_filtered, use_container_width=True)
-
-
-                # Filter the original data to include rows with selected topics
-                df_additional_info = df_filtered[df_filtered["Human_Readable_Topic"].isin(selected_topics)]
-                
-                # Dynamically update the markdown with selected topics
-                if selected_topics:
-                    selected_topics_text = ", ".join(selected_topics)
-                    st.markdown(f"### Export the Paper Details in the CSV file!")
-                    st.write(f"Selected Topics: {selected_topics_text}")
-                else:
-                    st.markdown("### Export the Paper Details in the CSV file!")
-                    st.write("No topics have been selected.")
-                st.write(f"Export detailed information about research paper, including links, dates, titles, abstracts, topic label, categories, submitter, and monthly trends for topics under the subdomain(s): **{', '.join(selected_subdomains)}**.")
-
-                # Display the filtered dataset for download
-                st.dataframe(df_additional_info, use_container_width=True)
-
-                # Provide download option for the CSV
-                csv = df_additional_info.to_csv(index=False)
-                st.download_button(
-                    label="Download CSV",
-                    data=csv,
-                    file_name="selected_topics_data.csv",
-                    mime="text/csv",
+                .properties(
+                    height=400,  # Set the height of the chart
+                    width=800,  # Set the width of the chart
                 )
+                .configure_legend(
+                    padding=10,  # Add padding around the legend
+                    cornerRadius=5  # Round the corners of the legend box
+                )
+                .interactive()  # Enable zoom and pan interactions
+            )
 
+            # Display the chart
+            st.altair_chart(chart, use_container_width=True)
+
+            # Display detailed insights
+            st.markdown("### Monthly Trends for selected Topic Details")
+            st.write(f"Showing monthly trends for topics under subdomain(s): {', '.join(selected_subdomains)}.")
+
+            # Add a data table for granular details
+            st.dataframe(df_grouped_filtered, use_container_width=True)
+
+            # Filter the original data to include rows with selected topics
+            df_additional_info = df_filtered[df_filtered["Human_Readable_Topic"].isin(selected_topics)]
+            
+            # Dynamically update the markdown with selected topics
+            if selected_topics:
+                selected_topics_text = ", ".join(selected_topics)
+                st.markdown(f"### Export the Paper Details in the CSV file!")
+                st.write(f"Selected Topics: {selected_topics_text}")
+            else:
+                st.markdown("### Export the Paper Details in the CSV file!")
+                st.write("No topics have been selected.")
+            st.write(f"Export detailed information about research paper, including links, dates, titles, abstracts, topic label, categories, submitter, and monthly trends for topics under the subdomain(s): **{', '.join(selected_subdomains)}**.")
+
+            # Display the filtered dataset for download
+            st.dataframe(df_additional_info, use_container_width=True, column_config={"id":st.column_config.LinkColumn()})
+
+            # Provide download option for the CSV
+            csv = df_additional_info.to_csv(index=False)
+            st.download_button(
+                label="Download CSV",
+                data=csv,
+                file_name="selected_topics_data.csv",
+                mime="text/csv",
+            )
     else:
         st.error("The required columns ('Categories', 'Subdomain', 'Human_Readable_Topic') are missing in the dataset.")
 
