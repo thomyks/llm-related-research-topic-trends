@@ -790,7 +790,7 @@ elif section == "Topic Overview":
             st.plotly_chart(fig, use_container_width=True)
 
             # Add dropdowns for manual filtering
-            st.write("### Select Subdomain or Topic to Filter Details")
+            st.write("### Select Subdomain and Topic for more Details")
             subdomains = df_filtered["Subdomain"].unique().tolist()
             selected_subdomain = st.selectbox("Select Subdomain", options=["All"] + subdomains)
 
@@ -826,6 +826,7 @@ elif section == "Topic Overview":
             export_data = df_filtered[
                 [
                     "title",
+                    "id",
                     "abstract",
                     "Human_Readable_Topic",
                     "Categories",
@@ -834,7 +835,7 @@ elif section == "Topic Overview":
                     "update_date",
                 ]
             ]
-            st.dataframe(export_data, use_container_width=True)
+            st.dataframe(export_data, use_container_width=True, column_config={"id":st.column_config.LinkColumn()})
 
             # Dynamically construct the file name
             domain_part = selected_category.replace(" ", "_")  # Replace spaces with underscores
