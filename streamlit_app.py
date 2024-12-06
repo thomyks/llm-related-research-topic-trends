@@ -75,7 +75,7 @@ if section == "Topic Tracking":
                     selected_categories.append(category)
 
         with col2:
-            st.markdown("### Select Subdomain(s)")
+            st.markdown("### Select Subdomain/s")
             available_subdomains = df[df["Categories"].isin(selected_categories)]["Subdomain"].unique().tolist()
             selected_subdomains = []
             for subdomain in available_subdomains:
@@ -113,7 +113,7 @@ if section == "Topic Tracking":
             # Allow the user to toggle topics
             topics = df_grouped["Human_Readable_Topic"].unique()
             selected_topics = st.multiselect(
-                "Select Topics to Display",
+                "Choose Topics to Display",
                 options=topics,
                 default=top_topics,  # Default to the top 5 topics
             )
