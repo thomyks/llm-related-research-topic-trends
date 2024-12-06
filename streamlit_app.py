@@ -36,9 +36,9 @@ section = st.sidebar.radio(
 # Sidebar Information
 st.sidebar.markdown("### About this App")
 st.sidebar.write(
-    """In an era of rapid advancements in large language model (LLM) research, keeping up with the ever-expanding flood of information can feel overwhelming, like navigating an uncharted forest with no clear path. 
-    This app serves as an interactive tool to track and analyze weekly research trends on the ArXiv platform from November 30, 2022, to November 29, 2024. By uncovering shifting focus areas, it provides valuable insights into the evolution of this dynamic field, spotlighting key topics across related subdomains and entities.
     """
+Keeping pace with the rapid surge of LLM research can feel like chasing a moving target.
+This interactive app analyzes over 40,000 ArXiv LLM-related papers from November 30, 2022, to November 29, 2024, uncovering weekly/monthly trends, spotlighting key topics, and mapping the evolution of this groundbreaking field.    """
 )
 
 
@@ -138,10 +138,20 @@ if section == "Topic Trends":
                     .encode(
                         x=alt.X("Month_Start:T", title="Month Start"),
                         y=alt.Y("Monthly_Count:Q", title="Monthly Count"),
-                        color=alt.Color("Human_Readable_Topic:N", title="Topics"),
+                        color=alt.Color(
+                            "Human_Readable_Topic:N",
+                            title="Topics",
+                            legend=alt.Legend(
+                                orient="right",  # Position the legend to the right of the chart
+                                titleFontSize=12,  # Increase title font size
+                                labelFontSize=10,  # Adjust label font size
+                                labelLimit=500,  # Prevent truncation of long labels
+                                direction="vertical",  # Ensure the legend is vertical
+                            ),
+                        ),
                     )
                 )
-
+           
                 # Add points for interaction
                 points = base_chart.mark_point(size=50).encode(opacity=alt.value(0))
 
@@ -180,7 +190,17 @@ if section == "Topic Trends":
                     .encode(
                         x=alt.X("Month_Start:T", title="Month Start"),
                         y=alt.Y("Cumulative_Count:Q", title="Cumulative Paper Count"),
-                        color=alt.Color("Human_Readable_Topic:N", title="Topics"),
+                        color=alt.Color(
+                            "Human_Readable_Topic:N",
+                            title="Topics",
+                            legend=alt.Legend(
+                                orient="right",  # Position the legend to the right of the chart
+                                titleFontSize=12,  # Increase title font size
+                                labelFontSize=10,  # Adjust label font size
+                                labelLimit=500,  # Prevent truncation of long labels
+                                direction="vertical",  # Ensure the legend is vertical
+                            ),    
+                   ),
                     )
                 )
 
@@ -625,14 +645,11 @@ elif section == "Entity Trends":
 
         """
     )
-    st.markdown("### Entity Trends in LLM-Related Research Papers")
-
-    # Load the data from a CSV file
+        # Load the data from a CSV file
     @st.cache_data
     def load_data():
         df = pd.read_csv("data/top_500_entity_data.csv")
         return df
-
 
     # Load the dataset
     df = load_data()
@@ -655,6 +672,13 @@ elif section == "Entity Trends":
         if min_date is None or max_date is None:
             st.error("Date range could not be determined due to invalid data.")
         else:
+            # Show a multiselect widget with the entities
+            entities = st.multiselect(
+                "Entities",
+                df["Entity"].unique(),
+                df["Entity"].value_counts().head(5).index.tolist(),
+            )
+
             # Configure the slider with valid datetime objects
             try:
                 date_range = st.slider(
@@ -668,20 +692,11 @@ elif section == "Entity Trends":
                 st.error(f"Error setting up the slider: {e}")
                 st.stop()
 
-            # Show a multiselect widget with the entities
-            entities = st.multiselect(
-                "Entities",
-                df["Entity"].unique(),
-                df["Entity"].value_counts().head(10).index.tolist(),
-            )
-
-            # Filter the dataframe based on user input
+            # Filter the dataframe based on user inputs
             df_filtered = df[
                 (df["Entity"].isin(entities)) &
                 (df["Date"].between(date_range[0], date_range[1]))
             ]
-
-            # Debugging: Print the filtered dataframe
 
             # Convert dates to weekly periods
             df_filtered["Week"] = df_filtered["Date"].dt.to_period("W").apply(lambda x: x.start_time)
@@ -690,13 +705,7 @@ elif section == "Entity Trends":
             df_reshaped = df_filtered.groupby(["Week", "Entity"]).size().unstack(fill_value=0)
             df_reshaped = df_reshaped.sort_index(ascending=False)
 
-            # Display the data as a table
-            st.dataframe(
-                df_reshaped,
-                use_container_width=True,
-            )
-
-            # Prepare the data for charting
+            # Prepare the filtered data for charting
             df_chart = pd.melt(
                 df_reshaped.reset_index(), id_vars="Week", var_name="Entity", value_name="Count"
             )
@@ -711,8 +720,15 @@ elif section == "Entity Trends":
                 .properties(height=320)
             )
 
-            # Display the data as a chart
+            # Display the filtered data as a chart
             st.altair_chart(chart, use_container_width=True)
+
+            # Display the filtered data as a table below the chart
+            st.dataframe(
+                df_reshaped,
+                use_container_width=True,
+            )
+
 
 
 
