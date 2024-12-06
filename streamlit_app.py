@@ -29,7 +29,7 @@ st.title("Discover, Analyze, and Export Insights on Your Favorite LLM Research T
 
 section = st.sidebar.radio(
     "Go to",
-    [ "Topic Trends","Hierchical Topic Knowledge","High-level overview of LLM-related Research", "Entity Trends"],
+    [ "Topic Tracking","Topic Overview","LLM-related Research Overview", "Entity Tracking"],
     index=0
 )
 
@@ -44,7 +44,7 @@ This interactive app analyzes over 40,000 ArXiv LLM-related papers from November
 
 
 # Topic Trends
-if section == "Topic Trends":
+if section == "Topic Tracking":
         # Load data from the CSV file
     @st.cache_data
     def load_data():
@@ -470,7 +470,7 @@ if section == "Topic Trends":
     #         st.dataframe(df_additional_info, use_container_width=True, column_config={"link":st.column_config.LinkColumn()})
 
 # Main Section Rendering
-elif section == "High-level overview of LLM-related Research":
+elif section == "LLM-related Research Overview"":
     # Introduction
     st.write(
         """
@@ -636,7 +636,7 @@ elif section == "High-level overview of LLM-related Research":
 #         st.dataframe(df_grouped_filtered, use_container_width=True)
 
 
-elif section == "Entity Trends":
+elif section == "Entity Tracking":
     st.title("Entity Trends in LLM-Related Research Papers")
     st.write(
         """
@@ -730,10 +730,8 @@ elif section == "Entity Trends":
             )
 
 
-
-
-
-elif section == "Hierchical Topic Knowledge":
+# 
+elif section == "Topic Overview":
     st.write(
         """
         ### Hierchical Topic Knowledge of LLM-Related Research Domain
