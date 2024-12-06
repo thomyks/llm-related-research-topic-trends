@@ -113,7 +113,7 @@ if section == "Topic Tracking":
             # Allow the user to toggle topics
             topics = df_grouped["Human_Readable_Topic"].unique()
             selected_topics = st.multiselect(
-                "Choose Topics to Display",
+                "Choose Topic/s",
                 options=topics,
                 default=top_topics,  # Default to the top 5 topics
             )
@@ -747,100 +747,111 @@ elif section == "Entity Tracking":
 
 # 
 elif section == "Topic Overview":
-    st.write(
-        """
-        ### Hierchical Topic Knowledge of LLM-Related Research Domain
-        """
-    )
-    # Load data from the CSV file
+        # Load data from CSV
     @st.cache_data
     def load_data():
-        df = pd.read_csv("data/LLM_related_domainss.csv")
-        return df
+        return pd.read_csv("data/LLM_related_domainss.csv")
 
-    # Load the dataset
     df = load_data()
 
-    # Ensure the necessary columns exist in the dataset
-    if "Categories" in df.columns and "Subdomain" in df.columns and "Human_Readable_Topic" in df.columns:
-        
-        # List of available categories (update these to match the actual categories in your dataset)
+    # Ensure necessary columns exist
+    if {"Categories", "Subdomain", "Human_Readable_Topic"}.issubset(df.columns):
+        st.write("### Hierarchical Topic Knowledge of LLM-Related Research Domain")
+
+        # Available categories
         available_categories = df["Categories"].unique().tolist()
-        
-        # Create a radio button to select the category
+
+        # Create category selector
         selected_category = st.radio(
-            "Select Category",
-            options=available_categories,
-            horizontal=True  # Makes the options appear horizontally
+            "Select Category", options=available_categories, horizontal=True
         )
 
-        # Filter data based on the selected category
+        # Filter data by selected category
         df_filtered = df[df["Categories"] == selected_category]
-        
-        # Check if the filtered dataset is empty
+
         if df_filtered.empty:
             st.warning(f"No data available for the selected category: {selected_category}.")
         else:
-            # Calculate the value column as the count of each 'Human_Readable_Topic' within the selected category
+            # Calculate the value column for Sunburst
             value_df = (
                 df_filtered.groupby(["Categories", "Subdomain", "Human_Readable_Topic"])
                 .size()
                 .reset_index(name="Value")
             )
 
-            # Create the sunburst chart
+            # Create Sunburst chart
             fig = px.sunburst(
                 value_df,
                 path=["Categories", "Subdomain", "Human_Readable_Topic"],
                 values="Value",
-                width=800,  # Increase width
-                height=800  # Increase height
+                width=800,
+                height=800,
             )
-
-
-                    # Display the chart
             st.plotly_chart(fig, use_container_width=True)
 
-            # Get the selected topics from the sunburst chart
-            selected_topics = value_df["Human_Readable_Topic"].unique().tolist()
+            # Add dropdowns for manual filtering
+            st.write("### Select Subdomain or Topic to Filter Details")
+            subdomains = df_filtered["Subdomain"].unique().tolist()
+            selected_subdomain = st.selectbox("Select Subdomain", options=["All"] + subdomains)
 
-            # Filter the data based on the selected topics
-            df_grouped_filtered = df_filtered[df_filtered["Human_Readable_Topic"].isin(selected_topics)]
+            if selected_subdomain != "All":
+                df_filtered = df_filtered[df_filtered["Subdomain"] == selected_subdomain]
 
-            # Display monthly trends for the selected topics
+                topics = df_filtered["Human_Readable_Topic"].unique().tolist()
+                selected_topic = st.selectbox("Select Topic", options=["All"] + topics)
+
+                if selected_topic != "All":
+                    df_filtered = df_filtered[df_filtered["Human_Readable_Topic"] == selected_topic]
+
+            # Monthly trends section
             st.markdown("### Monthly Trends for Selected Topic Details")
-            st.write(f"Showing monthly trends for topics under subdomain/s: {', '.join(df_filtered['Subdomain'].unique())}.")
-
-            # Add a data table for granular details
-            st.dataframe(df_grouped_filtered, use_container_width=True)
-
-            # Filter the original data to include rows with selected topics
-            df_additional_info = df_filtered[df_filtered["Human_Readable_Topic"].isin(selected_topics)]
-            
-            # Dynamically update the markdown with selected topics
-            if selected_topics:
-                selected_topics_text = ", ".join(selected_topics)
-                st.markdown(f"### Export the Paper Details in the CSV file!")
+            if selected_subdomain != "All":
+                st.write(f"Showing trends for Subdomain: {selected_subdomain}")
+            if "selected_topic" in locals() and selected_topic != "All":
+                st.write(f"Showing trends for Topic: {selected_topic}")
             else:
-                st.markdown("### Export the Paper Details in the CSV file!")
-            
-            st.write(f"Export detailed information about research papers, including links, dates, titles, abstracts, topic label, categories, submitter, and monthly trends for topics under the subdomain(s): **{', '.join(df_filtered['Subdomain'].unique())}**.")
+                st.write("Showing overall trends for Category.")
 
-            # Display the filtered dataset for download
-            st.dataframe(df_additional_info, use_container_width=True,column_config={"id":st.column_config.LinkColumn()})
-
-            # Provide download option for the CSV of the filtered paper details
-            csv_paper_details = df_additional_info[['title', 'abstract', 'Human_Readable_Topic', 'Categories', 'Subdomain', 'submitter', 'update_date']].to_csv(index=False)
-            st.download_button(
-                label="Download Paper Details CSV",
-                data=csv_paper_details,
-                file_name="research_paper_details.csv",
-                mime="text/csv",
+            # Group by month and display details
+            df_grouped = (
+                df_filtered.groupby(["Categories", "Subdomain", "Human_Readable_Topic"])
+                .size()
+                .reset_index(name="Count")
             )
 
+            st.dataframe(df_grouped, use_container_width=True)
+
+                    # Prepare export data
+            st.markdown("### Export the Paper Details in CSV")
+            export_data = df_filtered[
+                [
+                    "title",
+                    "abstract",
+                    "Human_Readable_Topic",
+                    "Categories",
+                    "Subdomain",
+                    "submitter",
+                    "update_date",
+                ]
+            ]
+            st.dataframe(export_data, use_container_width=True)
+
+            # Dynamically construct the file name
+            domain_part = selected_category.replace(" ", "_")  # Replace spaces with underscores
+            subdomain_part = selected_subdomain.replace(" ", "_") if selected_subdomain != "All" else "All_Subdomains"
+            dynamic_file_name = f"research_paper_details_{domain_part}_{subdomain_part}.csv"
+
+            # Allow download of CSV
+            csv = export_data.to_csv(index=False)
+            st.download_button(
+                label="Download Paper Details CSV",
+                data=csv,
+                file_name=dynamic_file_name,
+                mime="text/csv",
+            )
     else:
         st.error("The required columns ('Categories', 'Subdomain', 'Human_Readable_Topic') are missing in the dataset.")
-
+        # Descriptions Section
     st.write(
         """
         The "LLM-related research domain" encompasses a diverse range of concepts, frameworks, methodologies, and technologies centered on developing and applying LLMs. Below are the key categories that define this domain:
@@ -867,3 +878,133 @@ elif section == "Topic Overview":
         Center on the frameworks, datasets, and metrics (e.g., GLUE, BLEU, BERTScore) that quantitatively assess model performance, robustness, fairness, and usability. Highlight the role of evaluation in driving iterative improvements.
         """
     )
+
+
+
+
+
+
+
+
+
+
+    # st.write(
+    #     """
+    #     ### Hierchical Topic Knowledge of LLM-Related Research Domain
+    #     """
+    # )
+    # # Load data from the CSV file
+    # @st.cache_data
+    # def load_data():
+    #     df = pd.read_csv("data/LLM_related_domainss.csv")
+    #     return df
+
+    # # Load the dataset
+    # df = load_data()
+
+    # # Ensure the necessary columns exist in the dataset
+    # if "Categories" in df.columns and "Subdomain" in df.columns and "Human_Readable_Topic" in df.columns:
+        
+    #     # List of available categories (update these to match the actual categories in your dataset)
+    #     available_categories = df["Categories"].unique().tolist()
+        
+    #     # Create a radio button to select the category
+    #     selected_category = st.radio(
+    #         "Select Category",
+    #         options=available_categories,
+    #         horizontal=True  # Makes the options appear horizontally
+    #     )
+
+    #     # Filter data based on the selected category
+    #     df_filtered = df[df["Categories"] == selected_category]
+        
+    #     # Check if the filtered dataset is empty
+    #     if df_filtered.empty:
+    #         st.warning(f"No data available for the selected category: {selected_category}.")
+    #     else:
+    #         # Calculate the value column as the count of each 'Human_Readable_Topic' within the selected category
+    #         value_df = (
+    #             df_filtered.groupby(["Categories", "Subdomain", "Human_Readable_Topic"])
+    #             .size()
+    #             .reset_index(name="Value")
+    #         )
+
+    #         # Create the sunburst chart
+    #         fig = px.sunburst(
+    #             value_df,
+    #             path=["Categories", "Subdomain", "Human_Readable_Topic"],
+    #             values="Value",
+    #             width=800,  # Increase width
+    #             height=800  # Increase height
+    #         )
+
+
+    #                 # Display the chart
+    #         st.plotly_chart(fig, use_container_width=True)
+
+    #         # Get the selected topics from the sunburst chart
+    #         selected_topics = value_df["Human_Readable_Topic"].unique().tolist()
+
+    #         # Filter the data based on the selected topics
+    #         df_grouped_filtered = df_filtered[df_filtered["Human_Readable_Topic"].isin(selected_topics)]
+
+    #         # Display monthly trends for the selected topics
+    #         st.markdown("### Monthly Trends for Selected Topic Details")
+    #         st.write(f"Showing monthly trends for topics under subdomain/s: {', '.join(df_filtered['Subdomain'].unique())}.")
+
+    #         # Add a data table for granular details
+    #         st.dataframe(df_grouped_filtered, use_container_width=True)
+
+    #         # Filter the original data to include rows with selected topics
+    #         df_additional_info = df_filtered[df_filtered["Human_Readable_Topic"].isin(selected_topics)]
+            
+    #         # Dynamically update the markdown with selected topics
+    #         if selected_topics:
+    #             selected_topics_text = ", ".join(selected_topics)
+    #             st.markdown(f"### Export the Paper Details in the CSV file!")
+    #         else:
+    #             st.markdown("### Export the Paper Details in the CSV file!")
+            
+    #         st.write(f"Export detailed information about research papers, including links, dates, titles, abstracts, topic label, categories, submitter, and monthly trends for topics under the subdomain(s): **{', '.join(df_filtered['Subdomain'].unique())}**.")
+
+    #         # Display the filtered dataset for download
+    #         st.dataframe(df_additional_info, use_container_width=True,column_config={"id":st.column_config.LinkColumn()})
+
+    #         # Provide download option for the CSV of the filtered paper details
+    #         csv_paper_details = df_additional_info[['title', 'abstract', 'Human_Readable_Topic', 'Categories', 'Subdomain', 'submitter', 'update_date']].to_csv(index=False)
+    #         st.download_button(
+    #             label="Download Paper Details CSV",
+    #             data=csv_paper_details,
+    #             file_name="research_paper_details.csv",
+    #             mime="text/csv",
+    #         )
+
+    # else:
+    #     st.error("The required columns ('Categories', 'Subdomain', 'Human_Readable_Topic') are missing in the dataset.")
+
+    # st.write(
+    #     """
+    #     The "LLM-related research domain" encompasses a diverse range of concepts, frameworks, methodologies, and technologies centered on developing and applying LLMs. Below are the key categories that define this domain:
+
+    #     #### 1. Core Models and Architectures
+    #     Focus on designing the foundational structures of LLMs, including Transformer-based architectures, attention mechanisms, and scaling laws. Emphasize the theoretical and practical underpinnings that define a model’s capability.
+
+    #     #### 2. Learning Paradigms
+    #     Define methodologies that enable LLMs to adapt and generalize across tasks, such as few-shot, zero-shot, fine-tuning, and RLHF. Highlight approaches for improving task-specific performance without major architectural changes.
+
+    #     #### 3. Optimization Techniques
+    #     Explore strategies to enhance computational efficiency, scalability, and resource-friendliness, including quantization, pruning, and lightweight architectures (e.g., DistilBERT). Focus on making existing models more practical for deployment.
+
+    #     #### 4. Applications and Use Cases
+    #     Showcase real-world deployments of LLMs in tasks like conversational AI, Retrieval-Augmented Generation, and domain-specific automation. Emphasize the impact of LLMs across industries like healthcare, finance, and education.
+
+    #     #### 5. Societal Impacts and Ethics
+    #     Examine the societal implications of LLM deployment, including addressing issues of bias, fairness, transparency, and equitable access. Advocate for responsible and inclusive AI development practices.
+
+    #     #### 6. Infrastructure and Tools
+    #     Delve into the technical backbone that supports LLMs, such as APIs, libraries, deployment frameworks, and interoperability solutions. Ensure this category focuses on enabling efficient development and seamless integration of LLM systems.
+
+    #     #### 7. Evaluation and Benchmarks
+    #     Center on the frameworks, datasets, and metrics (e.g., GLUE, BLEU, BERTScore) that quantitatively assess model performance, robustness, fairness, and usability. Highlight the role of evaluation in driving iterative improvements.
+    #     """
+    # )
