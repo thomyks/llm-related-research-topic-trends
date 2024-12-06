@@ -3,8 +3,10 @@ import pandas as pd
 import streamlit as st
 import plotly.express as px
 import streamlit.components.v1 as components
-import wizmap
+from io import BytesIO
+from fpdf import FPDF  
 import os
+import matplotlib.pyplot as plt
 
 
 # Correct order for set_page_config
@@ -303,7 +305,7 @@ if section == "Topic Tracking":
             # st.altair_chart(chart, use_container_width=True)
 
             # Display detailed insights
-            st.markdown("### Monthly Trends for selected Topic Details")
+            st.markdown("### Monthly Trends")
             st.write(f"Showing monthly trends for topics under subdomain/s: {', '.join(selected_subdomains)}.")
 
             # Add a data table for granular details
@@ -325,12 +327,22 @@ if section == "Topic Tracking":
             # Display the filtered dataset for download
             st.dataframe(df_additional_info, use_container_width=True, column_config={"id":st.column_config.LinkColumn()})
 
+             # Generate a filename based on selected topics
+            if selected_topics:
+                # Create a shortened version of the topics for the filename
+                topics_for_filename = "_".join(selected_topics[:3])  # Use only the first 3 topics for brevity
+                if len(selected_topics) > 3:
+                    topics_for_filename += "_and_more"
+                file_name = f"research_papers_topics_{topics_for_filename}.csv"
+            else:
+                file_name = "topics_no_selection.csv"
+
             # Provide download option for the CSV
             csv = df_additional_info.to_csv(index=False)
             st.download_button(
                 label="Download CSV",
                 data=csv,
-                file_name="selected_topics_data.csv",
+                file_name=file_name,
                 mime="text/csv",
             )
     else:
