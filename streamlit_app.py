@@ -3,10 +3,10 @@ import pandas as pd
 import streamlit as st
 import plotly.express as px
 import streamlit.components.v1 as components
-from io import BytesIO
-from fpdf import FPDF  
-import os
-import matplotlib.pyplot as plt
+# from io import BytesIO
+# from fpdf import FPDF  
+# import os
+# import matplotlib.pyplot as plt
 
 
 # Correct order for set_page_config
