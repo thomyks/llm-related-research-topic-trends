@@ -3,6 +3,9 @@ import pandas as pd
 import streamlit as st
 import plotly.express as px
 import streamlit.components.v1 as components
+import wizmap
+import os
+
 
 # Correct order for set_page_config
 st.set_page_config(
@@ -103,7 +106,7 @@ if section == "Topic Tracking":
 
             # Get the total count for each topic to determine the top 10 topics
             topic_totals = df_grouped.groupby("Human_Readable_Topic")["Cumulative_Count"].max().reset_index()
-            top_topics = topic_totals.sort_values(by="Cumulative_Count", ascending=False)["Human_Readable_Topic"].head(5).tolist()
+            top_topics = topic_totals.sort_values(by="Cumulative_Count", ascending=False)["Human_Readable_Topic"].head(1).tolist()
 
             # Allow the user to toggle topics
             topics = df_grouped["Human_Readable_Topic"].unique()
