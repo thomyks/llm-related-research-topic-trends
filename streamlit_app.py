@@ -470,7 +470,7 @@ if section == "Topic Tracking":
     #         st.dataframe(df_additional_info, use_container_width=True, column_config={"link":st.column_config.LinkColumn()})
 
 # Main Section Rendering
-elif section == "LLM-related Research Overview"":
+elif section == "LLM-related Research Overview":
     # Introduction
     st.write(
         """
