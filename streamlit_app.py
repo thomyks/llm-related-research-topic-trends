@@ -10,12 +10,6 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import json
 
-# from io import BytesIO
-# from fpdf import FPDF  
-# import os
-# import matplotlib.pyplot as plt
-
-
 # Correct order for set_page_config
 st.set_page_config(
     page_title="LLM Research Trends",
@@ -56,8 +50,9 @@ This interactive app analyzes over 40,000 ArXiv LLM-related papers from November
 
 
 # Topic Trends
+# Topic Trends
 if section == "Topic Tracking":
-        # Load data from the CSV file
+    # Load data from the CSV file
     @st.cache_data
     def load_data():
         df = pd.read_csv("data/LLM_related_domainss.csv")
@@ -65,12 +60,12 @@ if section == "Topic Tracking":
 
     # Load the dataset
     df = load_data()
+
     # Ensure the necessary columns exist in the dataset
     if "Categories" in df.columns and "Subdomain" in df.columns and "Human_Readable_Topic" in df.columns:
-
         # List of available categories (domains)
         available_categories = df["Categories"].unique().tolist()
-        
+
         # Create columns layout for domain (Categories) and subdomain (Subdomain) selection
         col1, col2 = st.columns(2)
 
@@ -97,8 +92,7 @@ if section == "Topic Tracking":
         if df_subdomain_filtered.empty:
             st.warning(f"No data available for the selected domain(s): {', '.join(selected_categories)} and subdomain(s): {', '.join(selected_subdomains)}.")
         else:
-
-                # Step 3: Topic Trends Section
+            # Step 3: Topic Trends Section
             st.markdown(f"### Topic Trends for Subdomain(s): {', '.join(selected_subdomains)}")
 
             # Parse the 'update_date' column into datetime objects
@@ -122,7 +116,7 @@ if section == "Topic Tracking":
             selected_topics = st.multiselect(
                 "Choose Topic/s",
                 options=topics,
-                default=top_topics,  # Default to the top 5 topics
+                default=top_topics,  # Default to the top topic
             )
 
             # Filter the grouped data based on selected topics
@@ -131,15 +125,8 @@ if section == "Topic Tracking":
             # Add a select box for choosing the plot type
             plot_type = st.selectbox(
                 "Select Plot Type",
-                options=["Monthly Trend", "Cumulative Trend"],
+                options=["Monthly Trend", "Cumulative Trend", "Heatmap Trend"],
                 index=0,  # Default to the first option
-            )
-            # Add a hover selection for the helper line
-            hover = alt.selection_point(
-                on="mousemove",  # Trigger the selection on mouse movement
-                nearest=True,  # Select the nearest point
-                fields=["Month_Start"],  # Use the Month_Start field for alignment
-                empty="none"  # Do not display the line if no point is hovered
             )
 
             # Generate the appropriate chart based on user selection
@@ -163,37 +150,7 @@ if section == "Topic Tracking":
                         ),
                     )
                 )
-           
-                # Add points for interaction
-                points = base_chart.mark_point(size=50).encode(opacity=alt.value(0))
-
-                # Add a vertical line for hover interaction
-                hover_line = (
-                    alt.Chart(df_grouped_filtered)
-                    .mark_rule(color="gray", strokeWidth=2)
-                    .encode(
-                        x="Month_Start:T",
-                        tooltip=[
-                            alt.Tooltip("Month_Start:T", title="Month Start"),
-                            alt.Tooltip("Monthly_Count:Q", title="Monthly Count"),
-                            alt.Tooltip("Human_Readable_Topic:N", title="Topic"),
-                        ],
-                    )
-                    .transform_filter(hover)
-                )
-
-                # Combine base chart, points, and hover line
-                chart = (
-                    alt.layer(base_chart, points, hover_line)
-                    .add_selection(hover)
-                    .properties(
-                        height=400,
-                        width=800,
-                        title="Monthly Topic Trends"
-                    )
-                    .interactive()
-                )
-                st.altair_chart(chart, use_container_width=True)
+                st.altair_chart(base_chart, use_container_width=True)
 
             elif plot_type == "Cumulative Trend":
                 base_chart = (
@@ -211,106 +168,67 @@ if section == "Topic Tracking":
                                 labelFontSize=10,  # Adjust label font size
                                 labelLimit=500,  # Prevent truncation of long labels
                                 direction="vertical",  # Ensure the legend is vertical
-                            ),    
-                   ),
+                            ),
+                        ),
                     )
                 )
+                st.altair_chart(base_chart, use_container_width=True)
 
-                # Add points for interaction
-                points = base_chart.mark_point(size=50).encode(opacity=alt.value(0))
+            elif plot_type == "Heatmap Trend":
+                if not df_grouped_filtered.empty:
 
-                # Add a vertical line for hover interaction
-                hover_line = (
-                    alt.Chart(df_grouped_filtered)
-                    .mark_rule(color="gray", strokeWidth=2)
-                    .encode(
-                        x="Month_Start:T",
-                        tooltip=[
-                            alt.Tooltip("Month_Start:T", title="Month Start"),
-                            alt.Tooltip("Cumulative_Count:Q", title="Cumulative Count"),
-                            alt.Tooltip("Human_Readable_Topic:N", title="Topic"),
-                        ],
+                    # Ensure 'Month_Start' is in datetime format
+                    df_grouped_filtered["Month_Start"] = pd.to_datetime(df_grouped_filtered["Month_Start"], errors="coerce")
+
+                    # Create a complete range of months and topics
+                    all_months = pd.date_range(
+                        start=df_grouped_filtered["Month_Start"].min(),
+                        end=df_grouped_filtered["Month_Start"].max(),
+                        freq="MS"  # Monthly intervals
                     )
-                    .transform_filter(hover)
-                )
+                    all_topics = df_grouped_filtered["Human_Readable_Topic"].unique()
 
-                # Combine base chart, points, and hover line
-                chart = (
-                    alt.layer(base_chart, points, hover_line)
-                    .add_selection(hover)
-                    .properties(
-                        height=400,
-                        width=800,
-                        title="Cumulative Total Papers Per Topic"
+                    # Create a DataFrame with all combinations of months and topics
+                    complete_index = pd.MultiIndex.from_product(
+                        [all_months, all_topics],
+                        names=["Month_Start", "Human_Readable_Topic"]
                     )
-                    .interactive()
-                )
-                st.altair_chart(chart, use_container_width=True)
+                    complete_data = pd.DataFrame(index=complete_index).reset_index()
 
+                    # Merge the existing data with the complete data
+                    df_complete = pd.merge(
+                        complete_data,
+                        df_grouped_filtered,
+                        on=["Month_Start", "Human_Readable_Topic"],
+                        how="left"
+                    ).fillna({"Monthly_Count": 0})  # Fill missing counts with 0
 
-            # # Step 3: Topic Trends Section
-            # st.markdown(f"### Topic Trends for Subdomain(s): {', '.join(selected_subdomains)}")
+                    # Pivot the data to create a 2D matrix for the heatmap
+                    heatmap_data = df_complete.pivot(
+                        index="Human_Readable_Topic", columns="Month_Start", values="Monthly_Count"
+                    ).fillna(0)  # Fill any remaining NaNs with 0
 
-            # # Parse the 'update_date' column into datetime objects
-            # df_subdomain_filtered["update_date"] = pd.to_datetime(df_subdomain_filtered["update_date"], errors="coerce")
+                    # Create the Plotly heatmap
+                    import plotly.express as px
 
-            # # Add a column for monthly periods
-            # df_subdomain_filtered["Month_Start"] = df_subdomain_filtered["update_date"].dt.to_period("M").apply(lambda x: x.start_time)
+                    fig = px.imshow(
+                        heatmap_data,
+                        labels=dict(x="Month Start", y="Topics", color="Monthly Count"),
+                        x=heatmap_data.columns.strftime('%b %Y'),  # Format months for display
+                        y=heatmap_data.index,
+                        color_continuous_scale="Blues"                    )
 
-            # # Count articles per topic per month
-            # df_grouped = df_subdomain_filtered.groupby(["Month_Start", "Human_Readable_Topic"]).size().reset_index(name="Monthly_Count")
+                    # Update layout for better readability
+                    fig.update_layout(
+                        xaxis=dict(tickangle=-45),  # Rotate x-axis labels
+                        height=600,
+                        width=1000,
+                    )
 
-            # # Get the total count for each topic to determine the top 10 topics
-            # topic_totals = df_grouped.groupby("Human_Readable_Topic")["Monthly_Count"].sum().reset_index()
-            # top_topics = topic_totals.sort_values(by="Monthly_Count", ascending=False)["Human_Readable_Topic"].head(5).tolist()
-
-            # # Allow the user to toggle topics with a unique key
-            # topics = df_grouped["Human_Readable_Topic"].unique()
-
-            # selected_topics = st.multiselect(
-            #     "Select Topics to Display",
-            #     options=topics,
-            #     default=top_topics,  # Default to the top 5 topics
-            #     key=f"topic_multiselect_{'_'.join(selected_categories)}_{'_'.join(selected_subdomains)}"  # Unique key for each selection
-            # )
-
-            # # Filter the grouped data based on selected topics
-            # df_grouped_filtered = df_grouped[df_grouped["Human_Readable_Topic"].isin(selected_topics)]
-
-            # # Create an interactive line chart
-            # chart = (
-            #     alt.Chart(df_grouped_filtered)
-            #     .mark_line()
-            #     .encode(
-            #         x=alt.X("Month_Start:T", title="Month Start"),
-            #         y=alt.Y("Monthly_Count:Q", title="Monthly Count"),
-            #         color=alt.Color(
-            #             "Human_Readable_Topic:N",
-            #             title="Topics",  # Add a title for the legend
-            #             legend=alt.Legend(
-            #                 orient="right",  # Position the legend to the right
-            #                 titleFontSize=12,  # Adjust the font size of the legend title
-            #                 labelFontSize=10,  # Adjust the font size of the legend labels
-            #                 labelLimit=200,  # Increase the label limit to avoid truncation
-            #                 symbolLimit=50,  # Adjust the number of symbols displayed
-            #                 labelOverlap="greedy"  # Avoid overlapping of legend labels
-            #             )
-            #         )
-            #     )
-            #     .properties(
-            #         height=400,  # Set the height of the chart
-            #         width=800,  # Set the width of the chart
-            #     )
-            #     .configure_legend(
-            #         padding=10,  # Add padding around the legend
-            #         cornerRadius=5  # Round the corners of the legend box
-            #     )
-            #     .interactive()  # Enable zoom and pan interactions
-            # )
-
-            # # Display the chart
-            # st.altair_chart(chart, use_container_width=True)
-
+                    # Display the Plotly heatmap
+                    st.plotly_chart(fig, use_container_width=True)
+                else:
+                    st.warning("No data available for the selected topics.")
             # Display detailed insights
             st.markdown("### Monthly Trends")
             st.write(f"Showing monthly trends for topics under subdomain/s: {', '.join(selected_subdomains)}.")
@@ -354,142 +272,243 @@ if section == "Topic Tracking":
             )
     else:
         st.error("The required columns ('Categories', 'Subdomain', 'Human_Readable_Topic') are missing in the dataset.")
-
-
-    # # Title
-    # st.markdown("### Topic Trends Across LLM-Related Subdomains")
-
-    # # Load the data from the real dataset
-    # @st.cache_data
-    # def load_data():
-    #     # Replace with the uploaded file path
-    #     df = pd.read_csv("data/LLM_data.csv")
-    #     return df
-
-    # # Load the dataset
-    # df = load_data()
-
-    # # Parse the 'update_date' column into datetime objects
-    # df["update_date"] = pd.to_datetime(df["update_date"], errors="coerce")
-
-    # # Ensure the dataset is not empty after parsing
-    # if df.empty:
-    #     st.error("No valid data found in the dataset. Please check your data.")
-    # else:
-    #     # Create a navigation bar with tabs for each subdomain
-    #     subdomains = df["Categories"].unique()
-
-    #     # Add a radio button to select a subdomain with a unique key
-    #     tab = st.radio(
-    #         "Select Subdomain",
-    #         options=subdomains,
-    #         horizontal=True,  # This creates a navigation-like bar
-    #         key="unique_subdomain_radio"  # Ensure the key is unique
-    #     )
-
-    #     # Filter data based on the selected subdomain
-    #     df_filtered = df[df["Categories"] == tab]
-
-    #     # Check if the filtered dataset is empty
-    #     if df_filtered.empty:
-    #         st.warning(f"No data available for the selected subdomain: {tab}.")
-    #     else:
-    #         # Add a column for monthly periods
-    #         df_filtered["Month_Start"] = df_filtered["update_date"].dt.to_period("M").apply(lambda x: x.start_time)
-
-    #         # Count articles per topic per month
-    #         df_grouped = df_filtered.groupby(["Month_Start", "Human_Readable_Topic"]).size().reset_index(name="Monthly_Count")
-
-    #         # Get the total count for each topic to determine the top 10 topics
-    #         topic_totals = df_grouped.groupby("Human_Readable_Topic")["Monthly_Count"].sum().reset_index()
-    #         top_topics = topic_totals.sort_values(by="Monthly_Count", ascending=False)["Human_Readable_Topic"].head(5).tolist()
-
-    #         # Allow the user to toggle topics with a unique key
-    #         topics = df_grouped["Human_Readable_Topic"].unique()
-
-    #         selected_topics = st.multiselect(
-    #             "Select Topics to Display",
-    #             options=topics,
-    #             default=top_topics,  # Default to the top 5 topics
-    #             key=f"topic_multiselect_{tab}"  # Ensure the key is unique by appending the tab name
-    #         )
-
-    #         # Filter the grouped data based on selected topics
-    #         df_grouped_filtered = df_grouped[df_grouped["Human_Readable_Topic"].isin(selected_topics)]
-
-    #         # Display trends for the selected subdomain
-    #         st.markdown(f"### Topic Trends for Subdomain: **{tab}**")
-
-    #         # # Create an interactive line chart with maximum width
-    #         # chart = (
-    #         #     alt.Chart(df_grouped_filtered)
-    #         #     .mark_line()
-    #         #     .encode(
-    #         #         x=alt.X("Month_Start:T", title="Month Start"),
-    #         #         y=alt.Y("Monthly_Count:Q", title="Monthly Count"),
-    #         #         color=alt.Color("Human_Readable_Topic:N", title="Topics"),  # Different colors for each topic
-    #         #     )
-    #         #     .properties(
-    #         #         height=600, 
-    #         #         width=1400  # Use the full width of the container
-    #         #     )
-    #         # )
-    #         # Adjust the Topic Trends chart to ensure the legend is fully visible
-    #         chart = (
-    #             alt.Chart(df_grouped_filtered)
-    #             .mark_line()
-    #             .encode(
-    #                 x=alt.X("Month_Start:T", title="Month Start"),
-    #                 y=alt.Y("Monthly_Count:Q", title="Monthly Count"),
-    #                 color=alt.Color(
-    #                     "Human_Readable_Topic:N",
-    #                     title="Topics",  # Add a title for the legend
-    #                     legend=alt.Legend(
-    #                         orient="right",  # Position the legend to the right
-    #                         titleFontSize=12,  # Adjust the font size of the legend title
-    #                         labelFontSize=10,  # Adjust the font size of the legend labels
-    #                         labelLimit=200,  # Increase the label limit to avoid truncation
-    #                         symbolLimit=50,  # Adjust the number of symbols displayed
-    #                         labelOverlap="greedy"  # Avoid overlapping of legend labels
-    #                     )
-    #                 )
-    #             )
-    #             .properties(
-    #                 height=400,  # Set the height of the chart
-    #                 width=800,  # Set the width of the chart
-    #             )
-    #             .configure_legend(
-    #                 padding=10,  # Add padding around the legend
-    #                 cornerRadius=5  # Round the corners of the legend box
-    #             )
-    #             .interactive()  # Enable zoom and pan interactions
-    #         )
             
+   
 
-    #         # Display the chart as wide as possible
-    #         st.altair_chart(chart, use_container_width=True)
+# # Topic Trends
+# if section == "Topic Tracking":
+#         # Load data from the CSV file
+#     @st.cache_data
+#     def load_data():
+#         df = pd.read_csv("data/LLM_related_domainss.csv")
+#         return df
 
-    #         # Display detailed insights
-    #         st.markdown("### Monthly Trends for selected Topic Details")
-    #         st.write(f"Showing monthly trends for topics under subdomain: **{tab}**.")
+#     # Load the dataset
+#     df = load_data()
+#     # Ensure the necessary columns exist in the dataset
+#     if "Categories" in df.columns and "Subdomain" in df.columns and "Human_Readable_Topic" in df.columns:
 
-    #         # Add a data table for granular details
-    #         st.dataframe(df_grouped_filtered, use_container_width=True)
+#         # List of available categories (domains)
+#         available_categories = df["Categories"].unique().tolist()
+        
+#         # Create columns layout for domain (Categories) and subdomain (Subdomain) selection
+#         col1, col2 = st.columns(2)
 
+#         with col1:
+#             st.markdown("### Select LLM-related Domain/s")
+#             selected_categories = []
+#             for category in available_categories:
+#                 if st.checkbox(category, value=False, key=category):  # Default is not selected
+#                     selected_categories.append(category)
 
-    #         # Filter the original data to include rows with selected topics
-    #         df_additional_info = df_filtered[df_filtered["Human_Readable_Topic"].isin(selected_topics)]
-    #                     # Dynamically update the markdown with selected topics
-    #         if selected_topics:
-    #             selected_topics_text = ", ".join(selected_topics)
-    #             st.markdown(f"### Export the Paper Details in the CSV file!")
-    #             st.write(f"Selected Topics: {selected_topics_text}")
-    #         else:
-    #             st.markdown("### Export the Paper Details in the CSV file!")
-    #             st.write("No topics have been selected.")
-    #         st.write(f"Export detailed information about research paper, including links, dates, titles, abstracts, topic label, categories, submitter, and monthly trends for topics under the subdomain: **{tab}**.")
+#         with col2:
+#             st.markdown("### Select Subdomain/s")
+#             available_subdomains = df[df["Categories"].isin(selected_categories)]["Subdomain"].unique().tolist()
+#             selected_subdomains = []
+#             for subdomain in available_subdomains:
+#                 if st.checkbox(subdomain, value=False, key=subdomain):  # Default is not selected
+#                     selected_subdomains.append(subdomain)
 
-    #         st.dataframe(df_additional_info, use_container_width=True, column_config={"link":st.column_config.LinkColumn()})
+#         # Filter data based on the selected categories and subdomains
+#         df_filtered = df[df["Categories"].isin(selected_categories)]
+#         df_subdomain_filtered = df_filtered[df_filtered["Subdomain"].isin(selected_subdomains)]
+
+#         # Check if the filtered dataset is empty
+#         if df_subdomain_filtered.empty:
+#             st.warning(f"No data available for the selected domain(s): {', '.join(selected_categories)} and subdomain(s): {', '.join(selected_subdomains)}.")
+#         else:
+
+#                 # Step 3: Topic Trends Section
+#             st.markdown(f"### Topic Trends for Subdomain(s): {', '.join(selected_subdomains)}")
+
+#             # Parse the 'update_date' column into datetime objects
+#             df_subdomain_filtered["update_date"] = pd.to_datetime(df_subdomain_filtered["update_date"], errors="coerce")
+
+#             # Add a column for monthly periods
+#             df_subdomain_filtered["Month_Start"] = df_subdomain_filtered["update_date"].dt.to_period("M").apply(lambda x: x.start_time)
+
+#             # Count articles per topic per month
+#             df_grouped = df_subdomain_filtered.groupby(["Month_Start", "Human_Readable_Topic"]).size().reset_index(name="Monthly_Count")
+
+#             # Calculate cumulative sum for each topic
+#             df_grouped["Cumulative_Count"] = df_grouped.groupby("Human_Readable_Topic")["Monthly_Count"].cumsum()
+
+#             # Get the total count for each topic to determine the top 10 topics
+#             topic_totals = df_grouped.groupby("Human_Readable_Topic")["Cumulative_Count"].max().reset_index()
+#             top_topics = topic_totals.sort_values(by="Cumulative_Count", ascending=False)["Human_Readable_Topic"].head(1).tolist()
+
+#             # Allow the user to toggle topics
+#             topics = df_grouped["Human_Readable_Topic"].unique()
+#             selected_topics = st.multiselect(
+#                 "Choose Topic/s",
+#                 options=topics,
+#                 default=top_topics,  # Default to the top 5 topics
+#             )
+
+#             # Filter the grouped data based on selected topics
+#             df_grouped_filtered = df_grouped[df_grouped["Human_Readable_Topic"].isin(selected_topics)]
+
+#             # Add a select box for choosing the plot type
+#             plot_type = st.selectbox(
+#                 "Select Plot Type",
+#                 options=["Monthly Trend", "Cumulative Trend"],
+#                 index=0,  # Default to the first option
+#             )
+#             # Add a hover selection for the helper line
+#             hover = alt.selection_point(
+#                 on="mousemove",  # Trigger the selection on mouse movement
+#                 nearest=True,  # Select the nearest point
+#                 fields=["Month_Start"],  # Use the Month_Start field for alignment
+#                 empty="none"  # Do not display the line if no point is hovered
+#             )
+
+#             # Generate the appropriate chart based on user selection
+#             if plot_type == "Monthly Trend":
+#                 base_chart = (
+#                     alt.Chart(df_grouped_filtered)
+#                     .mark_line()
+#                     .encode(
+#                         x=alt.X("Month_Start:T", title="Month Start"),
+#                         y=alt.Y("Monthly_Count:Q", title="Monthly Count"),
+#                         color=alt.Color(
+#                             "Human_Readable_Topic:N",
+#                             title="Topics",
+#                             legend=alt.Legend(
+#                                 orient="right",  # Position the legend to the right of the chart
+#                                 titleFontSize=12,  # Increase title font size
+#                                 labelFontSize=10,  # Adjust label font size
+#                                 labelLimit=500,  # Prevent truncation of long labels
+#                                 direction="vertical",  # Ensure the legend is vertical
+#                             ),
+#                         ),
+#                     )
+#                 )
+           
+#                 # Add points for interaction
+#                 points = base_chart.mark_point(size=50).encode(opacity=alt.value(0))
+
+#                 # Add a vertical line for hover interaction
+#                 hover_line = (
+#                     alt.Chart(df_grouped_filtered)
+#                     .mark_rule(color="gray", strokeWidth=2)
+#                     .encode(
+#                         x="Month_Start:T",
+#                         tooltip=[
+#                             alt.Tooltip("Month_Start:T", title="Month Start"),
+#                             alt.Tooltip("Monthly_Count:Q", title="Monthly Count"),
+#                             alt.Tooltip("Human_Readable_Topic:N", title="Topic"),
+#                         ],
+#                     )
+#                     .transform_filter(hover)
+#                 )
+
+#                 # Combine base chart, points, and hover line
+#                 chart = (
+#                     alt.layer(base_chart, points, hover_line)
+#                     .add_selection(hover)
+#                     .properties(
+#                         height=400,
+#                         width=800,
+#                         title="Monthly Topic Trends"
+#                     )
+#                     .interactive()
+#                 )
+#                 st.altair_chart(chart, use_container_width=True)
+
+#             elif plot_type == "Cumulative Trend":
+#                 base_chart = (
+#                     alt.Chart(df_grouped_filtered)
+#                     .mark_line()
+#                     .encode(
+#                         x=alt.X("Month_Start:T", title="Month Start"),
+#                         y=alt.Y("Cumulative_Count:Q", title="Cumulative Paper Count"),
+#                         color=alt.Color(
+#                             "Human_Readable_Topic:N",
+#                             title="Topics",
+#                             legend=alt.Legend(
+#                                 orient="right",  # Position the legend to the right of the chart
+#                                 titleFontSize=12,  # Increase title font size
+#                                 labelFontSize=10,  # Adjust label font size
+#                                 labelLimit=500,  # Prevent truncation of long labels
+#                                 direction="vertical",  # Ensure the legend is vertical
+#                             ),    
+#                    ),
+#                     )
+#                 )
+
+#                 # Add points for interaction
+#                 points = base_chart.mark_point(size=50).encode(opacity=alt.value(0))
+
+#                 # Add a vertical line for hover interaction
+#                 hover_line = (
+#                     alt.Chart(df_grouped_filtered)
+#                     .mark_rule(color="gray", strokeWidth=2)
+#                     .encode(
+#                         x="Month_Start:T",
+#                         tooltip=[
+#                             alt.Tooltip("Month_Start:T", title="Month Start"),
+#                             alt.Tooltip("Cumulative_Count:Q", title="Cumulative Count"),
+#                             alt.Tooltip("Human_Readable_Topic:N", title="Topic"),
+#                         ],
+#                     )
+#                     .transform_filter(hover)
+#                 )
+
+#                 # Combine base chart, points, and hover line
+#                 chart = (
+#                     alt.layer(base_chart, points, hover_line)
+#                     .add_selection(hover)
+#                     .properties(
+#                         height=400,
+#                         width=800,
+#                         title="Cumulative Total Papers Per Topic"
+#                     )
+#                     .interactive()
+#                 )
+#                 st.altair_chart(chart, use_container_width=True)
+#             # Display detailed insights
+#             st.markdown("### Monthly Trends")
+#             st.write(f"Showing monthly trends for topics under subdomain/s: {', '.join(selected_subdomains)}.")
+
+#             # Add a data table for granular details
+#             st.dataframe(df_grouped_filtered, use_container_width=True)
+
+#             # Filter the original data to include rows with selected topics
+#             df_additional_info = df_filtered[df_filtered["Human_Readable_Topic"].isin(selected_topics)]
+            
+#             # Dynamically update the markdown with selected topics
+#             if selected_topics:
+#                 selected_topics_text = ", ".join(selected_topics)
+#                 st.markdown(f"### Export the Paper Details in the CSV file!")
+#                 st.write(f"Selected Topics: {selected_topics_text}")
+#             else:
+#                 st.markdown("### Export the Paper Details in the CSV file!")
+#                 st.write("No topics have been selected.")
+#             st.write(f"Export detailed information about research paper, including links, dates, titles, abstracts, topic label, categories, submitter, and monthly trends for topics under the subdomain/s: **{', '.join(selected_subdomains)}**.")
+
+#             # Display the filtered dataset for download
+#             st.dataframe(df_additional_info, use_container_width=True, column_config={"id":st.column_config.LinkColumn()})
+
+#              # Generate a filename based on selected topics
+#             if selected_topics:
+#                 # Create a shortened version of the topics for the filename
+#                 topics_for_filename = "_".join(selected_topics[:3])  # Use only the first 3 topics for brevity
+#                 if len(selected_topics) > 3:
+#                     topics_for_filename += "_and_more"
+#                 file_name = f"research_papers_topics_{topics_for_filename}.csv"
+#             else:
+#                 file_name = "topics_no_selection.csv"
+
+#             # Provide download option for the CSV
+#             csv = df_additional_info.to_csv(index=False)
+#             st.download_button(
+#                 label="Download CSV",
+#                 data=csv,
+#                 file_name=file_name,
+#                 mime="text/csv",
+#             )
+#     else:
+#         st.error("The required columns ('Categories', 'Subdomain', 'Human_Readable_Topic') are missing in the dataset.")
 
 # Main Section Rendering
 elif section == "LLM-related Research Overview":
@@ -569,93 +588,30 @@ elif section == "LLM-related Research Overview":
     # Display the chart in the Streamlit app
     st.altair_chart(chart, use_container_width=True)
 
-# # Topic Trends
-# # Title
-# st.markdown("### Topic Trends per LLM-related Subdomains")
 
-# # Load the data from the real dataset
-# @st.cache_data
-# def load_data():
-#     # Replace with the uploaded file path
-#     df = pd.read_csv("data/First_step_clustering_results_categorized_with_llm.csv")
-#     return df
 
-# # Load the dataset
-# df = load_data()
 
-# # Parse the 'update_date' column into datetime objects
-# df["update_date"] = pd.to_datetime(df["update_date"], errors="coerce")
+    # Title for the Streamlit app
+    st.title("Seattle Weather Visualization")
 
-# # Ensure the dataset is not empty after parsing
-# if df.empty:
-#     st.error("No valid data found in the dataset. Please check your data.")
-# else:
-#     # Create a navigation bar with tabs for each subdomain
-#     subdomains = df["Categories"].unique()
+    # Sample data (replace this with your actual data source if needed)
+    data = {
+        "date": pd.date_range(start="2023-01-01", periods=365, freq="D"),
+        "temp_max": [10 + i % 20 for i in range(365)]
+    }
+    datasets = {"seattle_weather": pd.DataFrame(data)}
 
-#     tab = st.radio(
-#         "Select Subdomain",
-#         options=subdomains,
-#         horizontal=True,  # This creates a navigation-like bar
-#         key="subdomain_radio"  # Add a unique key
-#     )
-
-#     # Filter data based on the selected subdomain
-#     df_filtered = df[df["Categories"] == tab]
-
-#     # Check if the filtered dataset is empty
-#     if df_filtered.empty:
-#         st.warning(f"No data available for the selected subdomain: {tab}.")
-#     else:
-#         # Add a column for weekly periods
-#         df_filtered["Week_Start"] = df_filtered["update_date"].dt.to_period("W").apply(lambda x: x.start_time)
-
-#         # Count articles per topic per week
-#         df_grouped = df_filtered.groupby(["Week_Start", "Human_Readable_Topic"]).size().reset_index(name="Weekly_Count")
-
-#         # Allow the user to toggle topics
-#         topics = df_grouped["Human_Readable_Topic"].unique()
-
-#         # Select first 10 topics as default
-#         default_topics = topics[:10] if len(topics) > 10 else topics
-
-#         selected_topics = st.multiselect(
-#             "Select Topics to Display",
-#             options=topics,
-#             default=default_topics,  # Default to the first 10 topics or all if fewer than 10
-#             key="topic_multiselect"  # Add a unique key for the multiselect widget
-#         )
-
-#         # Filter the grouped data based on selected topics
-#         df_grouped_filtered = df_grouped[df_grouped["Human_Readable_Topic"].isin(selected_topics)]
-
-#         # Display trends for the selected subdomain
-#         st.markdown(f"### Topic Trends for Subdomain: **{tab}**")
-
-#         # Create an interactive line chart with maximum width
-#         chart = (
-#             alt.Chart(df_grouped_filtered)
-#             .mark_line()
-#             .encode(
-#                 x=alt.X("Week_Start:T", title="Week Start"),
-#                 y=alt.Y("Weekly_Count:Q", title="Weekly Count"),
-#                 color=alt.Color("Human_Readable_Topic:N", title="Topics"),  # Different colors for each topic
-#             )
-#             .properties(
-#                 height=600, 
-#                 width="container"  # Use the full width of the container
-#             )
-#         )
-
-#         # Display the chart as wide as possible
-#         st.altair_chart(chart, use_container_width=True)
-
-#         # Display detailed insights
-#         st.markdown("### Subdomain and Topic Details")
-#         st.write(f"Showing detailed trends for topics under **{tab}**.")
-
-#         # Add a data table for granular details
-#         st.dataframe(df_grouped_filtered, use_container_width=True)
+    # Add plost visualization
+    st.subheader("Time Histogram")
+    plost.time_hist(
+        data=datasets['seattle_weather'],
+        date='date',
+        x_unit='week',
+        y_unit='day',
+        color='temp_max',
+        aggregate='median',
+        legend=None,
+    )
 
 
 elif section == "Entity Tracking":
@@ -886,136 +842,6 @@ elif section == "Topic Overview":
         Center on the frameworks, datasets, and metrics (e.g., GLUE, BLEU, BERTScore) that quantitatively assess model performance, robustness, fairness, and usability. Highlight the role of evaluation in driving iterative improvements.
         """
     )
-
-
-
-
-
-
-
-
-
-
-    # st.write(
-    #     """
-    #     ### Hierchical Topic Knowledge of LLM-Related Research Domain
-    #     """
-    # )
-    # # Load data from the CSV file
-    # @st.cache_data
-    # def load_data():
-    #     df = pd.read_csv("data/LLM_related_domainss.csv")
-    #     return df
-
-    # # Load the dataset
-    # df = load_data()
-
-    # # Ensure the necessary columns exist in the dataset
-    # if "Categories" in df.columns and "Subdomain" in df.columns and "Human_Readable_Topic" in df.columns:
-        
-    #     # List of available categories (update these to match the actual categories in your dataset)
-    #     available_categories = df["Categories"].unique().tolist()
-        
-    #     # Create a radio button to select the category
-    #     selected_category = st.radio(
-    #         "Select Category",
-    #         options=available_categories,
-    #         horizontal=True  # Makes the options appear horizontally
-    #     )
-
-    #     # Filter data based on the selected category
-    #     df_filtered = df[df["Categories"] == selected_category]
-        
-    #     # Check if the filtered dataset is empty
-    #     if df_filtered.empty:
-    #         st.warning(f"No data available for the selected category: {selected_category}.")
-    #     else:
-    #         # Calculate the value column as the count of each 'Human_Readable_Topic' within the selected category
-    #         value_df = (
-    #             df_filtered.groupby(["Categories", "Subdomain", "Human_Readable_Topic"])
-    #             .size()
-    #             .reset_index(name="Value")
-    #         )
-
-    #         # Create the sunburst chart
-    #         fig = px.sunburst(
-    #             value_df,
-    #             path=["Categories", "Subdomain", "Human_Readable_Topic"],
-    #             values="Value",
-    #             width=800,  # Increase width
-    #             height=800  # Increase height
-    #         )
-
-
-    #                 # Display the chart
-    #         st.plotly_chart(fig, use_container_width=True)
-
-    #         # Get the selected topics from the sunburst chart
-    #         selected_topics = value_df["Human_Readable_Topic"].unique().tolist()
-
-    #         # Filter the data based on the selected topics
-    #         df_grouped_filtered = df_filtered[df_filtered["Human_Readable_Topic"].isin(selected_topics)]
-
-    #         # Display monthly trends for the selected topics
-    #         st.markdown("### Monthly Trends for Selected Topic Details")
-    #         st.write(f"Showing monthly trends for topics under subdomain/s: {', '.join(df_filtered['Subdomain'].unique())}.")
-
-    #         # Add a data table for granular details
-    #         st.dataframe(df_grouped_filtered, use_container_width=True)
-
-    #         # Filter the original data to include rows with selected topics
-    #         df_additional_info = df_filtered[df_filtered["Human_Readable_Topic"].isin(selected_topics)]
-            
-    #         # Dynamically update the markdown with selected topics
-    #         if selected_topics:
-    #             selected_topics_text = ", ".join(selected_topics)
-    #             st.markdown(f"### Export the Paper Details in the CSV file!")
-    #         else:
-    #             st.markdown("### Export the Paper Details in the CSV file!")
-            
-    #         st.write(f"Export detailed information about research papers, including links, dates, titles, abstracts, topic label, categories, submitter, and monthly trends for topics under the subdomain(s): **{', '.join(df_filtered['Subdomain'].unique())}**.")
-
-    #         # Display the filtered dataset for download
-    #         st.dataframe(df_additional_info, use_container_width=True,column_config={"id":st.column_config.LinkColumn()})
-
-    #         # Provide download option for the CSV of the filtered paper details
-    #         csv_paper_details = df_additional_info[['title', 'abstract', 'Human_Readable_Topic', 'Categories', 'Subdomain', 'submitter', 'update_date']].to_csv(index=False)
-    #         st.download_button(
-    #             label="Download Paper Details CSV",
-    #             data=csv_paper_details,
-    #             file_name="research_paper_details.csv",
-    #             mime="text/csv",
-    #         )
-
-    # else:
-    #     st.error("The required columns ('Categories', 'Subdomain', 'Human_Readable_Topic') are missing in the dataset.")
-
-    # st.write(
-    #     """
-    #     The "LLM-related research domain" encompasses a diverse range of concepts, frameworks, methodologies, and technologies centered on developing and applying LLMs. Below are the key categories that define this domain:
-
-    #     #### 1. Core Models and Architectures
-    #     Focus on designing the foundational structures of LLMs, including Transformer-based architectures, attention mechanisms, and scaling laws. Emphasize the theoretical and practical underpinnings that define a model’s capability.
-
-    #     #### 2. Learning Paradigms
-    #     Define methodologies that enable LLMs to adapt and generalize across tasks, such as few-shot, zero-shot, fine-tuning, and RLHF. Highlight approaches for improving task-specific performance without major architectural changes.
-
-    #     #### 3. Optimization Techniques
-    #     Explore strategies to enhance computational efficiency, scalability, and resource-friendliness, including quantization, pruning, and lightweight architectures (e.g., DistilBERT). Focus on making existing models more practical for deployment.
-
-    #     #### 4. Applications and Use Cases
-    #     Showcase real-world deployments of LLMs in tasks like conversational AI, Retrieval-Augmented Generation, and domain-specific automation. Emphasize the impact of LLMs across industries like healthcare, finance, and education.
-
-    #     #### 5. Societal Impacts and Ethics
-    #     Examine the societal implications of LLM deployment, including addressing issues of bias, fairness, transparency, and equitable access. Advocate for responsible and inclusive AI development practices.
-
-    #     #### 6. Infrastructure and Tools
-    #     Delve into the technical backbone that supports LLMs, such as APIs, libraries, deployment frameworks, and interoperability solutions. Ensure this category focuses on enabling efficient development and seamless integration of LLM systems.
-
-    #     #### 7. Evaluation and Benchmarks
-    #     Center on the frameworks, datasets, and metrics (e.g., GLUE, BLEU, BERTScore) that quantitatively assess model performance, robustness, fairness, and usability. Highlight the role of evaluation in driving iterative improvements.
-    #     """
-    # )
 
 elif section == "Topic Discovery":
     # Initialize Together AI client
