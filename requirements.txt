@@ -2,3 +2,6 @@ streamlit
 plotly
 together
 PyPDF2
+scikit-learn
+numpy
+sentence-transformers
