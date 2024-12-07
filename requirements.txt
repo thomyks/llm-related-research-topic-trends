@@ -8,5 +8,4 @@ sentence-transformers==3.3.1
 huggingface-hub
 datamapplot
 matplotlib
-io
-
+numpy
