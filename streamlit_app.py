@@ -1156,7 +1156,11 @@ elif section == "Topic Discovery":
     # Ensure Extracted Topics and Top 5 Closest Topics persist during the session
     if "llm_topics" in st.session_state:
         st.write("### 🗂️ **Extracted Topics**")
-        st.table(pd.DataFrame({"Extracted Topics": st.session_state.llm_topics}))
+        st.text("\n".join(st.session_state.llm_topics))  # Display original output as plain text
+
+        # st.table(pd.DataFrame({"Extracted Topics": st.session_state.llm_topics}))
+        # Ensure Extracted Topics and Top 5 Closest Topics persist during the session
+
 
     if "top_5_topics" in st.session_state:
         st.write("### 📌 **Top 5 Closest Human-Readable Topics**")
