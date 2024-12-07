@@ -4,4 +4,4 @@ together
 PyPDF2
 scikit-learn
 numpy
-sentence-transformers
+sentence-transformers==2.2.2
