@@ -2,7 +2,6 @@ streamlit
 plotly
 together
 PyPDF2
-sentence_transformers
 sklearn
 numpy
 json
