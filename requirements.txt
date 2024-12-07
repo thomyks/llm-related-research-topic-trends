@@ -6,4 +6,7 @@ scikit-learn
 numpy
 sentence-transformers==3.3.1
 huggingface-hub
-plost
+datamapplot
+matplotlib
+io
+
