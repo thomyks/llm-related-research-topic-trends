@@ -1017,268 +1017,386 @@ elif section == "Topic Overview":
     #     """
     # )
 
+# elif section == "Topic Discovery":
+#     # Initialize Together AI client
+#     client = together.Client(api_key='e52dd14cb34eee0f4eab33d6f8ea5202276732546dc66be6394f80629e6c061f')
+#     model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+
+#     # Load datasets with caching
+#     @st.cache_data
+#     def load_topic_with_embeddings():
+#         dataset = pd.read_csv("data/Topic_with_Embeddings.csv")
+#         dataset['embedding_array'] = dataset['Embedding'].apply(json.loads)
+#         return dataset
+
+#     @st.cache_data
+#     def load_llm_related_domains():
+#         return pd.read_csv("data/LLM_related_domainss.csv")
+
+#     # PDF text extraction
+#     def extract_text_from_pdf(file):
+#         pdf_reader = PdfReader(file)
+#         text = ""
+#         for page in pdf_reader.pages:
+#             text += page.extract_text()
+#         return text
+
+#     # Title and Abstract extraction
+#     def extract_title_and_abstract(text):
+#         title = text.split('.')[0]  # First sentence
+#         start_idx = text.lower().find("abstract")
+#         end_idx = text.lower().find("introduction")
+#         abstract = text[start_idx + len("abstract"):end_idx].strip() if start_idx != -1 and end_idx != -1 else "Abstract not found."
+#         return title.strip(), abstract.strip()
+
+#     # Topic extraction using Together AI
+#     def extract_topics(title, abstract):
+#         prompt = f"""
+#         Based on the provided Title and Abstract of a research paper, extract a list of all the topics that might be necessary to conduct such research. 
+#         The output should be limited to a maximum of 10 topics.
+
+#         Title: {title}
+
+#         Abstract: {abstract}
+
+#         Provide the output in the format:
+#         Topics: [List of topics]
+#         """
+#         response = ""
+#         try:
+#             stream = client.chat.completions.create(
+#                 model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+#                 messages=[{"role": "user", "content": prompt}],
+#                 stream=True,
+#                 temperature=0.1,
+#             )
+#             for chunk in stream:
+#                 response += chunk.choices[0].delta.content or ""
+#         except Exception as e:
+#             st.error(f"Error during topic extraction: {e}")
+#             return None
+#         return response.strip()
+
+#     # Embedding computation
+#     def compute_embeddings(topics):
+#         return model.encode(topics, convert_to_numpy=True)
+
+#     # Find most similar topics
+#     def find_most_similar_topics(llm_topics, dataset, top_n=5):
+#         dataset_embeddings = np.vstack(dataset['embedding_array'].values)
+#         llm_embeddings = compute_embeddings(llm_topics)
+#         top_matches = []
+#         for i, llm_topic in enumerate(llm_topics):
+#             similarities = cosine_similarity([llm_embeddings[i]], dataset_embeddings)[0]
+#             top_indices = similarities.argsort()[-top_n:][::-1]
+#             top_matches.extend(dataset.iloc[top_indices].to_dict(orient='records'))
+#         unique_topics = {match['Human_Readable_Topic']: match for match in top_matches}
+#         return list(unique_topics.keys())[:5]
+
+#     # Filter and display table logic
+#     def filter_and_display_domains(filtered_domains, selected_topic=None):
+#         # Remove duplicates based on the 'id' column
+#         filtered_domains = filtered_domains.drop_duplicates(subset='id')
+#         if selected_topic:
+#             filtered_domains = filtered_domains[filtered_domains['Human_Readable_Topic'] == selected_topic]
+#         return filtered_domains
+
+#     # Streamlit UI
+#     st.title("Research Topic Extractor with Domain Suggestions")
+#     st.write("Upload a PDF or manually enter the Title and Abstract to analyze topics.")
+
+#     # Input selection
+#     option = st.radio("Choose Input Method:", ("Upload PDF", "Fill out Form"))
+
+#     if option == "Upload PDF":
+#         uploaded_file = st.file_uploader("Upload your PDF file:", type="pdf")
+#         if uploaded_file is not None:
+#             with st.spinner("Extracting text from PDF..."):
+#                 text = extract_text_from_pdf(uploaded_file)
+#             st.success("Text extracted successfully!")
+#             title, abstract = extract_title_and_abstract(text)
+#             user_title = st.text_area("Title (Edit if needed):", value=title, height=100)
+#             user_abstract = st.text_area("Abstract (Edit if needed):", value=abstract, height=300)
+
+#     elif option == "Fill out Form":
+#         user_title = st.text_input("Title (Edit if needed):")
+#         user_abstract = st.text_area("Abstract (Edit if needed):")
+
+#     # Topic extraction
+#     if st.button("Confirm and Extract Topics"):
+#         if user_title and user_abstract:
+#             with st.spinner("Analyzing content with Together AI..."):
+#                 analysis = extract_topics(user_title, user_abstract)
+#                 llm_topics = [topic.strip() for topic in analysis.split('- Topics: ')[-1].split(',')]
+#                 st.session_state.llm_topics = llm_topics
+
+#             st.success("Topics extracted successfully!")
+
+#             # Display extracted topics in a table
+#             st.session_state.extracted_topics_table = pd.DataFrame({"Extracted Topics": st.session_state.llm_topics})
+
+#             # Load datasets
+#             topic_embeddings_dataset = load_topic_with_embeddings()
+#             llm_related_domains = load_llm_related_domains()
+
+#             # Find top 5 topics
+#             with st.spinner("Finding similar topics..."):
+#                 top_5_topics = find_most_similar_topics(llm_topics, topic_embeddings_dataset)
+#                 st.session_state.top_5_topics = top_5_topics
+
+#             # Display top 5 topics
+#             st.session_state.top_5_table = pd.DataFrame({"Human_Readable_Topic": st.session_state.top_5_topics})
+
+#             # Filter dataset based on the top 5 topics
+#             filtered_domains = llm_related_domains[
+#                 llm_related_domains['Human_Readable_Topic'].isin(st.session_state.top_5_topics)
+#             ]
+#             st.session_state.filtered_domains = filtered_domains
+
+#     # Persist Extracted Topics and Top 5 Topics
+#     if "extracted_topics_table" in st.session_state:
+#         st.write("### Extracted Topics")
+#         st.table(st.session_state.extracted_topics_table)
+
+#     if "top_5_table" in st.session_state:
+#         st.write("### Top 5 Closest Human-Readable Topics")
+#         st.table(st.session_state.top_5_table)
+
+#     # Table filtering and visualization
+#     if "filtered_domains" in st.session_state:
+#         st.write("### Filtered LLM-Related Domains Table")
+
+#         unique_topics = st.session_state.filtered_domains['Human_Readable_Topic'].unique()
+#         selected_topic = st.selectbox("Select a topic to filter:", options=["All"] + list(unique_topics))
+
+#         # Filter and display
+#         if selected_topic == "All":
+#             displayed_domains = filter_and_display_domains(st.session_state.filtered_domains)
+#         else:
+#             displayed_domains = filter_and_display_domains(
+#                 st.session_state.filtered_domains,
+#                 selected_topic=selected_topic
+#             )
+
+#         st.dataframe(displayed_domains)
+
+#         # Download button
+#         csv_data = displayed_domains.to_csv(index=False)
+#         st.download_button(
+#             label="Download Filtered Table as CSV",
+#             data=csv_data,
+#             file_name="filtered_llm_related_domains.csv",
+#             mime="text/csv",
+#         )
+
+
+# elif section == "Topic Discovery":
+#     # Initialize Together AI client
+#     client = together.Client(api_key='e52dd14cb34eee0f4eab33d6f8ea5202276732546dc66be6394f80629e6c061f')
+#     model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+
+#     # Load datasets with caching
+#     @st.cache_data
+#     def load_topic_with_embeddings():
+#         dataset = pd.read_csv("data/Topic_with_Embeddings.csv")
+#         dataset['embedding_array'] = dataset['Embedding'].apply(json.loads)
+#         return dataset
+
+#     @st.cache_data
+#     def load_llm_related_domains():
+#         return pd.read_csv("data/LLM_related_domainss.csv")
+
+#     # PDF text extraction
+#     def extract_text_from_pdf(file):
+#         pdf_reader = PdfReader(file)
+#         text = ""
+#         for page in pdf_reader.pages:
+#             text += page.extract_text()
+#         return text
+
+#     # Title and Abstract extraction
+#     def extract_title_and_abstract(text):
+#         title = text.split('.')[0]  # First sentence
+#         start_idx = text.lower().find("abstract")
+#         end_idx = text.lower().find("introduction")
+#         abstract = text[start_idx + len("abstract"):end_idx].strip() if start_idx != -1 and end_idx != -1 else "Abstract not found."
+#         return title.strip(), abstract.strip()
+
+#     # Topic extraction using Together AI
+#     def extract_topics(title, abstract):
+#         prompt = f"""
+#         Based on the provided Title and Abstract of a research paper, extract a list of all the topics that might be necessary to conduct such research. 
+#         The output should be limited to a maximum of 10 topics.
+
+#         Title: {title}
+
+#         Abstract: {abstract}
+
+#         Provide the output in the format:
+#         Topics: [List of topics]
+#         """
+#         response = ""
+#         try:
+#             stream = client.chat.completions.create(
+#                 model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
+#                 messages=[{"role": "user", "content": prompt}],
+#                 stream=True,
+#                 temperature=0.1,
+#             )
+#             for chunk in stream:
+#                 response += chunk.choices[0].delta.content or ""
+#         except Exception as e:
+#             st.error(f"Error during topic extraction: {e}")
+#             return None
+#         return response.strip()
+
+#     # Embedding computation
+#     def compute_embeddings(topics):
+#         return model.encode(topics, convert_to_numpy=True)
+
+#     # Find most similar topics
+#     def find_most_similar_topics(llm_topics, dataset, top_n=5):
+#         dataset_embeddings = np.vstack(dataset['embedding_array'].values)
+#         llm_embeddings = compute_embeddings(llm_topics)
+#         top_matches = []
+#         for i, llm_topic in enumerate(llm_topics):
+#             similarities = cosine_similarity([llm_embeddings[i]], dataset_embeddings)[0]
+#             top_indices = similarities.argsort()[-top_n:][::-1]
+#             top_matches.extend(dataset.iloc[top_indices].to_dict(orient='records'))
+#         unique_topics = {match['Human_Readable_Topic']: match for match in top_matches}
+#         return list(unique_topics.keys())[:5]
+
+#     # Filter and display table logic
+#     def filter_and_display_domains(filtered_domains, selected_topic=None):
+#         # Remove duplicates based on the 'id' column
+#         filtered_domains = filtered_domains.drop_duplicates(subset='id')
+#         if selected_topic:
+#             filtered_domains = filtered_domains[filtered_domains['Human_Readable_Topic'] == selected_topic]
+#         return filtered_domains
+
+
+#     # Streamlit UI with Emojis for Better User Experience
+#     st.title("🔍 Research Topic Extractor with Domain Suggestions")
+#     st.write("Easily analyze and explore research topics from a PDF or a custom input!")
+
+#     # Input selection with Emojis
+#     option = st.radio(
+#         "📄 **Choose Input Method**:",
+#         ("Upload PDF", "Fill out Form")
+#     )
+
+#     if option == "Upload PDF":
+#         uploaded_file = st.file_uploader("📄 Upload your PDF file:", type="pdf")
+#         if uploaded_file is not None:
+#             with st.spinner("🔄 Extracting text from PDF..."):
+#                 text = extract_text_from_pdf(uploaded_file)
+#             st.success("✅ Text extracted successfully!")
+#             title, abstract = extract_title_and_abstract(text)
+#             user_title = st.text_area("📝 **Title** (Edit if needed):", value=title, height=100)
+#             user_abstract = st.text_area("📋 **Abstract** (Edit if needed):", value=abstract, height=300)
+
+#     elif option == "Fill out Form":
+#         user_title = st.text_input("📝 **Enter Title**:")
+#         user_abstract = st.text_area("📋 **Enter Abstract**:")
+
+#     # Topic extraction button
+#     if st.button("📊 **Extract Potential Topics**"):
+#         if user_title and user_abstract:
+#             with st.spinner("🔄 Analyzing content..."):
+#                 analysis = extract_topics(user_title, user_abstract)
+#                 llm_topics = [topic.strip() for topic in analysis.split('- Topics: ')[-1].split(',')]
+#                 st.session_state.llm_topics = llm_topics
+
+#             st.success("✅ Topics extracted successfully!")
+
+#             # Display extracted topics in a table
+#             st.write("### 🗂️ **Extracted Topics**")
+#             st.session_state.extracted_topics_table = pd.DataFrame({"Extracted Topics": st.session_state.llm_topics})
+#             st.table(st.session_state.extracted_topics_table)
+
+#             # Load datasets
+#             topic_embeddings_dataset = load_topic_with_embeddings()
+#             llm_related_domains = load_llm_related_domains()
+
+#             # Find top 5 topics
+#             with st.spinner("🔍 Finding similar topics..."):
+#                 top_5_topics = find_most_similar_topics(llm_topics, topic_embeddings_dataset)
+#                 st.session_state.top_5_topics = top_5_topics
+
+#             # Display top 5 topics
+#             st.write("### 📌 **Top 5 Closest Human-Readable Topics**")
+#             st.session_state.top_5_table = pd.DataFrame({"Human_Readable_Topic": st.session_state.top_5_topics})
+#             st.table(st.session_state.top_5_table)
+
+#             # Filter dataset based on the top 5 topics
+#             filtered_domains = llm_related_domains[
+#                 llm_related_domains['Human_Readable_Topic'].isin(st.session_state.top_5_topics)
+#             ]
+#             st.session_state.filtered_domains = filtered_domains
+
+#     # Table filtering and visualization
+#     if "filtered_domains" in st.session_state:
+#         st.write("### 🔍 **Filtered LLM-Related Domains**")
+
+#         unique_topics = st.session_state.filtered_domains['Human_Readable_Topic'].unique()
+#         selected_topic = st.selectbox("📂 **Filter by Topic**:", options=["All"] + list(unique_topics))
+
+#         # Filter and display
+#         if selected_topic == "All":
+#             displayed_domains = filter_and_display_domains(st.session_state.filtered_domains)
+#         else:
+#             displayed_domains = filter_and_display_domains(
+#                 st.session_state.filtered_domains,
+#                 selected_topic=selected_topic
+#             )
+
+#         st.dataframe(displayed_domains)
+
+#         # Download button
+#         csv_data = displayed_domains.to_csv(index=False)
+#         st.download_button(
+#             label="📥 **Download Filtered Table as CSV**",
+#             data=csv_data,
+#             file_name="filtered_llm_related_domains.csv",
+#             mime="text/csv",
+#         )
+
+
 
 elif section == "Topic Discovery":
     # Initialize Together AI client
     client = together.Client(api_key='e52dd14cb34eee0f4eab33d6f8ea5202276732546dc66be6394f80629e6c061f')
-
-
-    # # Initialize the SentenceTransformer model
-    # model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-
-    # # Function to load the topic embeddings dataset
-    # @st.cache_data
-    # def load_topic_with_embeddings():
-    #     """
-    #     Load the Topic_with_Embeddings dataset.
-    #     """
-    #     dataset = pd.read_csv("data/Topic_with_Embeddings.csv")
-    #     # Convert the `Embedding` column from a JSON-like string to a list
-    #     dataset['embedding_array'] = dataset['Embedding'].apply(json.loads)
-    #     return dataset
-
-    # # Function to load LLM-related domains dataset
-    # @st.cache_data
-    # def load_llm_related_domains():
-    #     """
-    #     Load the LLM-related domains dataset.
-    #     """
-    #     return pd.read_csv("data/LLM_related_domainss.csv")
-
-    # # Compute embeddings for the LLM topics
-    # def compute_embeddings(topics):
-    #     """
-    #     Generate embeddings for the provided topics using SentenceTransformer.
-
-    #     Args:
-    #         topics (list of str): List of topics to convert to embeddings.
-
-    #     Returns:
-    #         np.array: Numpy array of embeddings.
-    #     """
-    #     return model.encode(topics, convert_to_numpy=True)
-
-    # # Function to find most similar topics
-    # def find_most_similar_topics(llm_topics, dataset, top_n=5):
-    #     """
-    #     Find the most similar topics from the Topic_with_Embeddings dataset.
-
-    #     Args:
-    #         llm_topics (list of str): Topics generated by LLM.
-    #         dataset (pd.DataFrame): Dataset with topic embeddings.
-    #         top_n (int): Number of most similar topics to return for each LLM topic.
-
-    #     Returns:
-    #         list: List of the top 5 closest human-readable topics across all LLM topics.
-    #     """
-    #     # Extract dataset embeddings
-    #     dataset_embeddings = np.vstack(dataset['embedding_array'].values)
-
-    #     # Compute embeddings for LLM topics
-    #     llm_embeddings = compute_embeddings(llm_topics)
-
-    #     # Compute similarity and find top matches
-    #     top_matches = []
-    #     for i, llm_topic in enumerate(llm_topics):
-    #         similarities = cosine_similarity([llm_embeddings[i]], dataset_embeddings)[0]
-    #         top_indices = similarities.argsort()[-top_n:][::-1]  # Indices of top N most similar topics
-    #         top_matches.extend(dataset.iloc[top_indices].to_dict(orient='records'))
-
-    #     # Sort aggregated matches by similarity score and get the top 5 unique topics
-    #     unique_topics = {match['Human_Readable_Topic']: match for match in top_matches}
-    #     return list(unique_topics.keys())[:5]  # Return only the top 5 unique topics
-
-    #   # Function to extract text from a PDF
-    # def extract_text_from_pdf(file):
-    #     from PyPDF2 import PdfReader
-    #     pdf_reader = PdfReader(file)
-    #     text = ""
-    #     for page in pdf_reader.pages:
-    #         text += page.extract_text()
-    #     return text
-
-    # # Function to extract title and abstract
-    # def extract_title_and_abstract(text):
-    #     # Extract title (first sentence)
-    #     title = text.split('.')[0]
-        
-    #     # Extract abstract (text between "Abstract" and "Introduction")
-    #     start_idx = text.lower().find("abstract")
-    #     end_idx = text.lower().find("introduction")
-    #     abstract = text[start_idx + len("abstract"):end_idx].strip() if start_idx != -1 and end_idx != -1 else "Abstract not found."
-        
-    #     return title.strip(), abstract.strip()
-
-    # # Function to extract topics using Together AI
-    # def extract_topics(title, abstract):
-    #     """
-    #     Extracts a list of topics required to conduct research based on Title and Abstract.
-
-    #     Args:
-    #         title (str): Title of the research paper.
-    #         abstract (str): Abstract of the research paper.
-
-    #     Returns:
-    #         str: A list of topics generated by the Together AI model.
-    #     """
-    #     prompt = f"""
-    #     Based on the provided Title and Abstract of a research paper, extract a list of all the topics that might be necessary to conduct such research. 
-    #     The output should be limited to a maximum of 10 topics.
-
-    #     Title: {title}
-
-    #     Abstract: {abstract}
-
-    #     Provide the output in the format:
-    #     Topics: [List of topics]
-    #     """
-    #     response = ""
-    #     try:
-    #         # Stream the response
-    #         stream = client.chat.completions.create(
-    #             model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
-    #             messages=[{"role": "user", "content": prompt}],
-    #             stream=True,
-    #             temperature=0.1,
-    #         )
-
-    #         # Concatenate the streamed response chunks
-    #         for chunk in stream:
-    #             response += chunk.choices[0].delta.content or ""
-
-    #     except Exception as e:
-    #         st.error(f"Error during topic extraction: {e}")
-    #         return None
-
-    #     return response.strip()
-
-
-    # # Streamlit UI
-    # st.title("Research Topic Extractor with Domain Suggestions")
-    # st.write("Upload a PDF or manually enter the Title and Abstract to analyze topics and find similar ones from datasets.")
-
-    # # Option to upload a PDF or manually input fields
-    # option = st.radio("Choose Input Method:", ("Upload PDF", "Fill out Form"))
-
-    # if option == "Upload PDF":
-    #     uploaded_file = st.file_uploader("Upload your PDF file:", type="pdf")
-    #     if uploaded_file is not None:
-    #         with st.spinner("Extracting text from PDF..."):
-    #             text = extract_text_from_pdf(uploaded_file)
-    #         st.success("Text extracted successfully!")
-            
-    #         # Extract title and abstract
-    #         title, abstract = extract_title_and_abstract(text)
-
-    #         # Display extracted fields for confirmation
-    #         st.write("### Confirm Extracted Fields")
-    #         user_title = st.text_area("Title (Edit if needed):", value=title, height=100)
-    #         user_abstract = st.text_area("Abstract (Edit if needed):", value=abstract, height=300)
-    #         full_content = st.text_area("Original Content (Read-only):", value=text, height=500, disabled=True)
-
-    # elif option == "Fill out Form":
-    #     user_title = st.text_input("Title (Edit if needed):")
-    #     user_abstract = st.text_area("Abstract (Edit if needed):")
-    #     full_content = None  # Not needed when filling out manually
-
-    # # Confirm and Extract Topics
-    # if st.button("Confirm and Extract Topics"):
-    #     if user_title and user_abstract:
-    #         with st.spinner("Analyzing content with Together AI..."):
-    #             analysis = extract_topics(user_title, user_abstract)
-    #             llm_topics = [topic.strip() for topic in analysis.split('- Topics: ')[-1].split(',')]
-
-    #         st.success("Topics extracted successfully!")
-
-    #         # Load Topic_with_Embeddings dataset
-    #         topic_embeddings_dataset = load_topic_with_embeddings()
-
-    #         # Find top 5 closest topics
-    #         with st.spinner("Finding similar topics..."):
-    #             top_5_topics = find_most_similar_topics(llm_topics, topic_embeddings_dataset)
-
-    #         # Display the top 5 topics as a separate table
-    #         st.write("### Top 5 Closest Human-Readable Topics")
-    #         top_5_table = pd.DataFrame({"Human_Readable_Topic": top_5_topics})
-    #         st.table(top_5_table)
-
-    #         # Load LLM-related domains dataset
-    #         llm_related_domains = load_llm_related_domains()
-
-    #         # Filter dataset based on the top 5 topics
-    #         filtered_domains = llm_related_domains[
-    #             llm_related_domains['Human_Readable_Topic'].isin(top_5_topics)
-    #         ]
-
-    #         # Display filtered table
-    #         st.write("### Filtered LLM-Related Domains Table")
-    #         st.dataframe(filtered_domains)
-
-    #         # Provide a download button for the filtered table
-    #         csv_data = filtered_domains.to_csv(index=False)
-    #         st.download_button(
-    #             label="Download Filtered Table as CSV",
-    #             data=csv_data,
-    #             file_name="filtered_llm_related_domains.csv",
-    #             mime="text/csv",
-    #         )
-    #     else:
-    #         st.warning("Please provide both Title and Abstract!")
-
-
     model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
-    # Function to load the topic embeddings dataset
+    # Load datasets with caching
     @st.cache_data
     def load_topic_with_embeddings():
-        """
-        Load the Topic_with_Embeddings dataset.
-        """
         dataset = pd.read_csv("data/Topic_with_Embeddings.csv")
-        # Convert the `Embedding` column from a JSON-like string to a list
         dataset['embedding_array'] = dataset['Embedding'].apply(json.loads)
         return dataset
 
-    # Function to load LLM-related domains dataset
     @st.cache_data
     def load_llm_related_domains():
-        """
-        Load the LLM-related domains dataset.
-        """
         return pd.read_csv("data/LLM_related_domainss.csv")
-      # Function to extract text from a PDF
+
+    # PDF text extraction
     def extract_text_from_pdf(file):
-        from PyPDF2 import PdfReader
         pdf_reader = PdfReader(file)
         text = ""
         for page in pdf_reader.pages:
             text += page.extract_text()
         return text
 
-    # Function to extract title and abstract
+    # Title and Abstract extraction
     def extract_title_and_abstract(text):
-        # Extract title (first sentence)
-        title = text.split('.')[0]
-        
-        # Extract abstract (text between "Abstract" and "Introduction")
+        title = text.split('.')[0]  # First sentence
         start_idx = text.lower().find("abstract")
         end_idx = text.lower().find("introduction")
         abstract = text[start_idx + len("abstract"):end_idx].strip() if start_idx != -1 and end_idx != -1 else "Abstract not found."
-        
         return title.strip(), abstract.strip()
 
-    # Function to extract topics using Together AI
+    # Topic extraction using Together AI
     def extract_topics(title, abstract):
-        """
-        Extracts a list of topics required to conduct research based on Title and Abstract.
-
-        Args:
-            title (str): Title of the research paper.
-            abstract (str): Abstract of the research paper.
-
-        Returns:
-            str: A list of topics generated by the Together AI model.
-        """
         prompt = f"""
         Based on the provided Title and Abstract of a research paper, extract a list of all the topics that might be necessary to conduct such research. 
         The output should be limited to a maximum of 10 topics.
@@ -1292,135 +1410,133 @@ elif section == "Topic Discovery":
         """
         response = ""
         try:
-            # Stream the response
             stream = client.chat.completions.create(
                 model="meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
                 messages=[{"role": "user", "content": prompt}],
                 stream=True,
                 temperature=0.1,
             )
-
-            # Concatenate the streamed response chunks
             for chunk in stream:
                 response += chunk.choices[0].delta.content or ""
-
         except Exception as e:
             st.error(f"Error during topic extraction: {e}")
             return None
-
         return response.strip()
 
-    # Compute embeddings for the LLM topics
+    # Embedding computation
     def compute_embeddings(topics):
-        """
-        Generate embeddings for the provided topics using SentenceTransformer.
-
-        Args:
-            topics (list of str): List of topics to convert to embeddings.
-
-        Returns:
-            np.array: Numpy array of embeddings.
-        """
         return model.encode(topics, convert_to_numpy=True)
 
-    # Function to find most similar topics
+    # Find most similar topics
     def find_most_similar_topics(llm_topics, dataset, top_n=5):
-        """
-        Find the most similar topics from the Topic_with_Embeddings dataset.
-
-        Args:
-            llm_topics (list of str): Topics generated by LLM.
-            dataset (pd.DataFrame): Dataset with topic embeddings.
-            top_n (int): Number of most similar topics to return for each LLM topic.
-
-        Returns:
-            list: List of the top 5 closest human-readable topics across all LLM topics.
-        """
-        # Extract dataset embeddings
         dataset_embeddings = np.vstack(dataset['embedding_array'].values)
-
-        # Compute embeddings for LLM topics
         llm_embeddings = compute_embeddings(llm_topics)
-
-        # Compute similarity and find top matches
         top_matches = []
         for i, llm_topic in enumerate(llm_topics):
             similarities = cosine_similarity([llm_embeddings[i]], dataset_embeddings)[0]
-            top_indices = similarities.argsort()[-top_n:][::-1]  # Indices of top N most similar topics
+            top_indices = similarities.argsort()[-top_n:][::-1]
             top_matches.extend(dataset.iloc[top_indices].to_dict(orient='records'))
-
-        # Sort aggregated matches by similarity score and get the top 5 unique topics
         unique_topics = {match['Human_Readable_Topic']: match for match in top_matches}
-        return list(unique_topics.keys())[:5]  # Return only the top 5 unique topics
+        return list(unique_topics.keys())[:5]
 
-    # Streamlit UI
-    st.title("Research Topic Extractor with Domain Suggestions")
-    st.write("Upload a PDF or manually enter the Title and Abstract to analyze topics and find similar ones from datasets.")
+    # Filter and display table logic
+    def filter_and_display_domains(filtered_domains, selected_topic=None):
+        # Remove duplicates based on the 'id' column
+        filtered_domains = filtered_domains.drop_duplicates(subset='id')
+        if selected_topic:
+            filtered_domains = filtered_domains[filtered_domains['Human_Readable_Topic'] == selected_topic]
+        return filtered_domains
 
-    # Option to upload a PDF or manually input fields
-    option = st.radio("Choose Input Method:", ("Upload PDF", "Fill out Form"))
+    # Streamlit UI with Emojis for Better User Experience
+    st.title("🔍 Provide Input, Extract Topics, and Discover Related Research Papers")
+    st.write("Easily extract the topic of your research, find similar topics, and explore research papers related to those topics!")
+
+    # Input selection with Emojis
+    option = st.radio(
+        "📄 **Choose Input Method**:",
+        ("Upload PDF", "Fill out Form")
+    )
 
     if option == "Upload PDF":
-        uploaded_file = st.file_uploader("Upload your PDF file:", type="pdf")
+        uploaded_file = st.file_uploader("📄 Upload your PDF file:", type="pdf")
         if uploaded_file is not None:
-            with st.spinner("Extracting text from PDF..."):
+            with st.spinner("🔄 Extracting text from PDF..."):
                 text = extract_text_from_pdf(uploaded_file)
-            st.success("Text extracted successfully!")
-            
-            # Extract title and abstract
+            st.success("✅ Text extracted successfully!")
             title, abstract = extract_title_and_abstract(text)
-
-            # Display extracted fields for confirmation
-            st.write("### Confirm Extracted Fields")
-            user_title = st.text_area("Title (Edit if needed):", value=title, height=100)
-            user_abstract = st.text_area("Abstract (Edit if needed):", value=abstract, height=300)
-            full_content = st.text_area("Original Content (Read-only):", value=text, height=500, disabled=True)
+            user_title = st.text_area("📝 **Title** (Edit if needed):", value=title, height=100)
+            user_abstract = st.text_area("📋 **Abstract** (Edit if needed):", value=abstract, height=300)
 
     elif option == "Fill out Form":
-        user_title = st.text_input("Title (Edit if needed):")
-        user_abstract = st.text_area("Abstract (Edit if needed):")
-        full_content = None  # Not needed when filling out manually
+        user_title = st.text_input("📝 **Enter Title**:")
+        user_abstract = st.text_area("📋 **Enter Abstract**:")
 
-    # Confirm and Extract Topics
-    if st.button("Confirm and Extract Topics"):
+    # Topic extraction button
+    if st.button("📊 **Extract Potential Topics**"):
         if user_title and user_abstract:
-            with st.spinner("Analyzing content with Together AI..."):
+            with st.spinner("🔄 Analyzing content..."):
                 analysis = extract_topics(user_title, user_abstract)
                 llm_topics = [topic.strip() for topic in analysis.split('- Topics: ')[-1].split(',')]
+                st.session_state.llm_topics = llm_topics
 
-            st.success("Topics extracted successfully!")
+            st.success("✅ Topics extracted successfully!")
 
-            # Load Topic_with_Embeddings dataset
+    
+            # Load datasets
             topic_embeddings_dataset = load_topic_with_embeddings()
-
-            # Find top 5 closest topics
-            with st.spinner("Finding similar topics..."):
-                top_5_topics = find_most_similar_topics(llm_topics, topic_embeddings_dataset)
-
-            # Display the top 5 topics as a separate table
-            st.write("### Top 5 Closest Human-Readable Topics")
-            top_5_table = pd.DataFrame({"Human_Readable_Topic": top_5_topics})
-            st.table(top_5_table)
-
-            # Load LLM-related domains dataset
             llm_related_domains = load_llm_related_domains()
+
+            # Find top 5 topics
+            with st.spinner("🔍 Finding similar topics..."):
+                top_5_topics = find_most_similar_topics(llm_topics, topic_embeddings_dataset)
+                st.session_state.top_5_topics = top_5_topics
+
+    
 
             # Filter dataset based on the top 5 topics
             filtered_domains = llm_related_domains[
-                llm_related_domains['Human_Readable_Topic'].isin(top_5_topics)
+                llm_related_domains['Human_Readable_Topic'].isin(st.session_state.top_5_topics)
             ]
+            st.session_state.filtered_domains = filtered_domains
+    # # Ensure E
+    # Ensure Extracted Topics and Top 5 Closest Topics persist during the session
+    if "llm_topics" in st.session_state:
+        st.write("### 🗂️ **Extracted Topics**")
+        st.table(pd.DataFrame({"Extracted Topics": st.session_state.llm_topics}))
 
-            # Display filtered table
-            st.write("### Filtered LLM-Related Domains Table")
-            st.dataframe(filtered_domains)
+    if "top_5_topics" in st.session_state:
+        st.write("### 📌 **Top 5 Closest Human-Readable Topics**")
+        st.table(pd.DataFrame({"Human_Readable_Topic": st.session_state.top_5_topics}))
 
-            # Provide a download button for the filtered table
-            csv_data = filtered_domains.to_csv(index=False)
-            st.download_button(
-                label="Download Filtered Table as CSV",
-                data=csv_data,
-                file_name="filtered_llm_related_domains.csv",
-                mime="text/csv",
-            )
+    # Table filtering and visualization
+    if "filtered_domains" in st.session_state:
+        st.write("### 🔍 **Discover All Research Papers for the Topic**")
+           # Remove duplicates based on the 'id' column
+        st.session_state.filtered_domains = st.session_state.filtered_domains.drop_duplicates(subset='id')
+        unique_topics = st.session_state.filtered_domains['Human_Readable_Topic'].unique()
+        selected_topic = st.selectbox("📂 **Choose the Topic!**:", options=["All"] + list(unique_topics))
+
+        # Persist filtered domains in session state to avoid disappearing data
+        if selected_topic == "All":
+            displayed_domains = st.session_state.filtered_domains
+            csv_file_name = "filtered_llm_related_domains.csv"
         else:
-            st.warning("Please provide both Title and Abstract!")
+            displayed_domains = st.session_state.filtered_domains[
+                st.session_state.filtered_domains['Human_Readable_Topic'] == selected_topic
+            ]
+            csv_file_name = f"filtered_domains_{selected_topic.replace(' ', '_').replace('/', '_')}.csv"
+
+        # Save the filtered results in session state
+        st.session_state.displayed_domains = displayed_domains
+
+        # Display the table
+        st.dataframe(st.session_state.displayed_domains)
+
+        # Download button
+        csv_data = st.session_state.displayed_domains.to_csv(index=False)
+        st.download_button(
+            label="📥 **Download Filtered Table as CSV**",
+            data=csv_data,
+            file_name=csv_file_name,
+            mime="text/csv",
+        )
