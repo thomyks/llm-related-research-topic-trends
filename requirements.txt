@@ -2,7 +2,3 @@ streamlit
 plotly
 together
 PyPDF2
-sklearn
-numpy
-json
-
