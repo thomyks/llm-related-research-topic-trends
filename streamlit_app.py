@@ -62,7 +62,7 @@ if section == "Topic Tracking":
     # Load data from the CSV file
     @st.cache_data
     def load_data():
-        df = pd.read_csv("data/Datamap/data_with_coordinates.csv")
+        df = pd.read_csv("data/Datamap/Concatenated_LLM_Subdomains_embeddings.csv")
         return df
 
     # Load the dataset
