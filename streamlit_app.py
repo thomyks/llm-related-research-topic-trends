@@ -430,8 +430,8 @@ elif section == "LLM-related Research Overview":
     )
 
     # Step 3: Streamlit App
-    st.title("Custom Data Landscape")
-    st.subheader("A data map based on your custom dataset")
+    st.title(" Data Landscape")
+    st.subheader("A data map based on LLM-related research papers.")
 
     # Render the plot in Streamlit
     try:
