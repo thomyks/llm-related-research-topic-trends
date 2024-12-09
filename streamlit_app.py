@@ -99,6 +99,42 @@ if section == "Topic Tracking":
         if df_subdomain_filtered.empty:
             st.warning(f"No data available for the selected domain(s): {', '.join(selected_categories)} and subdomain(s): {', '.join(selected_subdomains)}.")
         else:
+                       # Datamapplot visualization integration
+            if "2d_coords" in df_subdomain_filtered.columns and "title" in df_subdomain_filtered.columns:
+                # Ensure the '2d_coords' column is in the correct format
+                df_subdomain_filtered["2d_coords"] = df_subdomain_filtered["2d_coords"].apply(eval)  # Convert string to list if needed
+                coords_array = np.array(df_subdomain_filtered["2d_coords"].tolist(), dtype=np.float32)
+                labels_array = df_subdomain_filtered["Human_Readable_Topic"].to_numpy()
+                hover_data = df_subdomain_filtered["title"].tolist()
+
+                import datamapplot as dmp
+
+                plot = dmp.create_interactive_plot(
+                    coords_array,
+                    labels_array,
+                    hover_text=hover_data,
+                    font_family="Playfair Display SC",
+                    title=f"Datamap for Subdomain(s): {', '.join(selected_subdomains)}",
+                    sub_title="An interactive visualization of selected data",
+                    logo=None,  # Add logo if desired
+                    on_click="window.open(`http://google.com/search?q=\"{hover_text}\"`)",
+                    enable_search=True,
+                    darkmode=True,
+                )
+
+                # Render the datamapplot visualization in Streamlit
+                try:
+                    if hasattr(plot, "to_html"):
+                        st.components.v1.html(plot.to_html(), height=800, scrolling=True)
+                    else:
+                        # Save the plot to an HTML file and render
+                        plot.save("subdomain_plot.html")
+                        with open("subdomain_plot.html", "r") as f:
+                            html_content = f.read()
+                        st.components.v1.html(html_content, height=800, scrolling=True)
+                except Exception as e:
+                    st.error(f"Unable to render the plot. Error: {e}")
+
             # Step 3: Topic Trends Section
             st.markdown(f"### Topic Trends for Subdomain(s): {', '.join(selected_subdomains)}")
 
@@ -316,44 +352,7 @@ if section == "Topic Tracking":
                 file_name=file_name,
                 mime="text/csv",
             )    
-            # Datamapplot visualization integration
-            if "2d_coords" in df_subdomain_filtered.columns and "title" in df_subdomain_filtered.columns:
-                # Ensure the '2d_coords' column is in the correct format
-                df_subdomain_filtered["2d_coords"] = df_subdomain_filtered["2d_coords"].apply(eval)  # Convert string to list if needed
-                coords_array = np.array(df_subdomain_filtered["2d_coords"].tolist(), dtype=np.float32)
-                labels_array = df_subdomain_filtered["Human_Readable_Topic"].to_numpy()
-                hover_data = df_subdomain_filtered["title"].tolist()
-
-                import datamapplot as dmp
-
-                plot = dmp.create_interactive_plot(
-                    coords_array,
-                    labels_array,
-                    hover_text=hover_data,
-                    font_family="Playfair Display SC",
-                    title=f"Datamap for Subdomain(s): {', '.join(selected_subdomains)}",
-                    sub_title="An interactive visualization of selected data",
-                    logo=None,  # Add logo if desired
-                    on_click="window.open(`http://google.com/search?q=\"{hover_text}\"`)",
-                    enable_search=True,
-                    darkmode=True,
-                )
-
-                # Render the datamapplot visualization in Streamlit
-                try:
-                    if hasattr(plot, "to_html"):
-                        st.components.v1.html(plot.to_html(), height=800, scrolling=True)
-                    else:
-                        # Save the plot to an HTML file and render
-                        plot.save("subdomain_plot.html")
-                        with open("subdomain_plot.html", "r") as f:
-                            html_content = f.read()
-                        st.components.v1.html(html_content, height=800, scrolling=True)
-                except Exception as e:
-                    st.error(f"Unable to render the plot. Error: {e}")
-
-
-
+ 
 
 
 # Main Section Rendering
@@ -439,7 +438,7 @@ elif section == "LLM-related Research Overview":
     # Step 1: Load Local Data with Caching
     @st.cache_data
     def load_coordinates_data():
-        df = pd.read_csv("data/Datamap/data_with_coordinates.csv")
+        df = pd.read_csv("data/Datamap/Concatenated_LLM_Subdomains_embeddings.csv")
         if isinstance(df['2d_coords'].iloc[0], str):
             df['2d_coords'] = df['2d_coords'].apply(eval)
         return df
