@@ -186,35 +186,39 @@ if section == "Topic Tracking":
                 st.altair_chart(base_chart, use_container_width=True)
 
             elif plot_type == "Normalized Cumulative Trend":
-                # Calculate the total cumulative count for each topic
-                topic_totals = df_grouped.groupby("Human_Readable_Topic")["Cumulative_Count"].transform("max")
+                if df_grouped_filtered.empty:
+                    st.warning("No data available for the selected topics. Please select at least one topic.")
+                else:
+                    # Calculate the total cumulative count for each topic
+                    topic_totals = df_grouped.groupby("Human_Readable_Topic")["Cumulative_Count"].transform("max")
 
-                # Normalize the cumulative count by dividing by the total count for each topic
-                df_grouped_filtered["Normalized_Cumulative_Count"] = (
-                    df_grouped_filtered["Cumulative_Count"] / topic_totals
-                )
-
-                # Plot the normalized cumulative trend
-                normalized_chart = (
-                    alt.Chart(df_grouped_filtered)
-                    .mark_line()
-                    .encode(
-                        x=alt.X("Month_Start:T", title="Month Start"),
-                        y=alt.Y("Normalized_Cumulative_Count:Q", title="Normalized Cumulative Paper Count"),
-                        color=alt.Color(
-                            "Human_Readable_Topic:N",
-                            title="Topics",
-                            legend=alt.Legend(
-                                orient="right",
-                                titleFontSize=12,
-                                labelFontSize=10,
-                                labelLimit=500,
-                                direction="vertical",
-                            ),
-                        ),
+                    # Normalize the cumulative count by dividing by the total count for each topic
+                    df_grouped_filtered["Normalized_Cumulative_Count"] = (
+                        df_grouped_filtered["Cumulative_Count"] / topic_totals
                     )
-                )
-                st.altair_chart(normalized_chart, use_container_width=True)
+
+                    # Plot the normalized cumulative trend
+                    normalized_chart = (
+                        alt.Chart(df_grouped_filtered)
+                        .mark_line()
+                        .encode(
+                            x=alt.X("Month_Start:T", title="Month Start"),
+                            y=alt.Y("Normalized_Cumulative_Count:Q", title="Normalized Cumulative Paper Count"),
+                            color=alt.Color(
+                                "Human_Readable_Topic:N",
+                                title="Topics",
+                                legend=alt.Legend(
+                                    orient="right",
+                                    titleFontSize=12,
+                                    labelFontSize=10,
+                                    labelLimit=500,
+                                    direction="vertical",
+                                ),
+                            ),
+                        )
+                    )
+                    st.altair_chart(normalized_chart, use_container_width=True)
+
 
             elif plot_type == "Heatmap Trend":
                 if not df_grouped_filtered.empty:
