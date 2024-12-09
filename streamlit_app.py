@@ -131,12 +131,14 @@ if section == "Topic Tracking":
             # Filter the grouped data based on selected topics
             df_grouped_filtered = df_grouped[df_grouped["Human_Readable_Topic"].isin(selected_topics)]
 
-            # Add a select box for choosing the plot type
+              # Add a select box for choosing the plot type
             plot_type = st.selectbox(
                 "Select Plot Type",
-                options=["Monthly Trend", "Cumulative Trend", "Heatmap Trend"],
+                options=["Monthly Trend", "Cumulative Trend", "Normalized Cumulative Trend", "Heatmap Trend"],
                 index=0,  # Default to the first option
             )
+
+            
 
             # Generate the appropriate chart based on user selection
             if plot_type == "Monthly Trend":
@@ -182,6 +184,37 @@ if section == "Topic Tracking":
                     )
                 )
                 st.altair_chart(base_chart, use_container_width=True)
+
+            elif plot_type == "Normalized Cumulative Trend":
+                # Calculate the total cumulative count for each topic
+                topic_totals = df_grouped.groupby("Human_Readable_Topic")["Cumulative_Count"].transform("max")
+
+                # Normalize the cumulative count by dividing by the total count for each topic
+                df_grouped_filtered["Normalized_Cumulative_Count"] = (
+                    df_grouped_filtered["Cumulative_Count"] / topic_totals
+                )
+
+                # Plot the normalized cumulative trend
+                normalized_chart = (
+                    alt.Chart(df_grouped_filtered)
+                    .mark_line()
+                    .encode(
+                        x=alt.X("Month_Start:T", title="Month Start"),
+                        y=alt.Y("Normalized_Cumulative_Count:Q", title="Normalized Cumulative Paper Count"),
+                        color=alt.Color(
+                            "Human_Readable_Topic:N",
+                            title="Topics",
+                            legend=alt.Legend(
+                                orient="right",
+                                titleFontSize=12,
+                                labelFontSize=10,
+                                labelLimit=500,
+                                direction="vertical",
+                            ),
+                        ),
+                    )
+                )
+                st.altair_chart(normalized_chart, use_container_width=True)
 
             elif plot_type == "Heatmap Trend":
                 if not df_grouped_filtered.empty:
