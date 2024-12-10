@@ -773,10 +773,26 @@ elif section == "Topic Overview":
 
 elif section == "Topic Discovery":
         # # Load environment variables from the .env file
+
     load_dotenv()
 
-    # Access the LLM API key
+    # Access the API key
     api_key = os.getenv("LLM_API_KEY")
+
+    # Debug: Print the API key for verification (avoid in production)
+    if api_key:
+        st.write("API key successfully loaded!")
+    else:
+        st.error("API key is missing. Please check your .env file.")
+
+    # Initialize Together AI client
+    try:
+        client = together.Client(api_key=api_key)
+        st.write("Together client initialized successfully!")
+    except together.error.AuthenticationError as e:
+        st.error(f"Authentication error: {e}")
+
+
 
     # Test if the key is loaded
     if api_key:
