@@ -777,16 +777,6 @@ elif section == "Topic Discovery":
     secrets_path = "secrets.toml"
     secrets = toml.load(secrets_path)
     api_key = secrets["LLM_API_KEY"]["key"]
-    
-    # Initialize Together client
-    if api_key:
-        try:
-            client = together.Client(api_key=api_key)
-            st.write("Together client initialized successfully!")
-        except together.error.AuthenticationError as e:
-            st.error(f"Authentication error: {e}")    
-        
-
     # Initialize Together AI client
     client = together.Client(api_key=api_key)
     model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
@@ -957,7 +947,8 @@ elif section == "Topic Discovery":
         st.session_state.displayed_domains = displayed_domains
 
         # Display the table
-        st.dataframe(st.session_state.displayed_domains)
+        st.dataframe(st.session_state.displayed_domains, use_container_width=True, column_config={"id":st.column_config.LinkColumn()})
+
 
         # Download button
         csv_data = st.session_state.displayed_domains.to_csv(index=False)
