@@ -9,4 +9,3 @@ huggingface-hub
 datamapplot
 matplotlib
 numpy
-python-dotenv

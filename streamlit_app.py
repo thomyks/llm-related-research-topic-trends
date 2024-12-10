@@ -489,59 +489,34 @@ elif section == "LLM-related Research Overview":
     #         st.components.v1.html(html_content, height=800, scrolling=True)
     # except Exception as e:
     #     st.error(f"Unable to render the plot. Error: {e}")
+    # # Load Data
+    # @st.cache_data
+    # def load_coordinates_data():
+    #     df = pd.read_csv("data/Datamap/Concatenated_LLM_Subdomains_embeddings.csv")
+    #     df['2d_coords'] = df['2d_coords'].apply(eval) if isinstance(df['2d_coords'].iloc[0], str) else df['2d_coords']
+    #     return df
 
+    # df = load_coordinates_data()
+    # coords_array = np.array(df['2d_coords'].tolist())
+    # labels_array = df['Subdomain'].to_numpy()
 
-    # # Step 1: Load Data
-    # base_url = "https://github.com/TutteInstitute/datamapplot/raw/main/examples"
-
-    # # Load the data map file
-    # data_map_file = requests.get(f"{base_url}/arxiv_ml_data_map.npy")
-    # arxivml_data_map = np.load(io.BytesIO(data_map_file.content))
-
-    # # Load label layers
-    # arxivml_label_layers = []
-    # for layer_num in range(5):
-    #     label_file = requests.get(f"{base_url}/arxiv_ml_layer{layer_num}_cluster_labels.npy")
-    #     arxivml_label_layers.append(np.load(io.BytesIO(label_file.content), allow_pickle=True))
-
-    # # Step 2: Define Hover Data
-    # # Example hover data - replace with your own or dynamically generate based on your data
-    # arxiv_hover_data = ["Paper {}".format(i) for i in range(len(arxivml_data_map))]
-
-    # # Step 3: Generate the Interactive Plot
-    # plot = dmp.create_interactive_plot(
-    #     arxivml_data_map,
-    #     arxivml_label_layers[0],
-    #     arxivml_label_layers[2],
-    #     arxivml_label_layers[4],
-    #     hover_text=arxiv_hover_data,
-    #     font_family="Playfair Display SC",
-    #     title="ArXiv Machine Learning Landscape",
-    #     sub_title="A data map of papers from the Machine Learning section of ArXiv",
-    #     logo="https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/ArXiv_logo_2022.svg/512px-ArXiv_logo_2022.svg.png",
-    #     logo_width=180,
-    #     on_click="window.open(`http://google.com/search?q=\"{hover_text}\"`)",
-    #     enable_search=True,
-    #     darkmode=True,
+    # # Create Plot
+    # plot = dmp.create_plot(
+    # coords_array,
+    # labels_array,
+    # label_over_points=True,
+    # dynamic_label_size=True,
+    # color_label_text=False,
+    # darkmode=True,
     # )
 
-    # # Step 4: Streamlit App
-    # st.title("ArXiv Machine Learning Landscape")
-    # st.subheader("A data map of papers from the Machine Learning section of ArXiv")
-
-    # # Render the plot in Streamlit
+    # # Render in Streamlit
+    # st.title("Data Landscape")
+    # st.subheader("A data map based on LLM-related research papers.")
     # try:
-    #     # Check if the plot object has `to_html` method for rendering
-    #     if hasattr(plot, 'to_html'):
-    #         st.components.v1.html(plot.to_html(), height=800, scrolling=True)
-    #     else:
-    #         # Save the plot to an HTML file and render
-    #         plot.save("arxiv_plot.html")
-    #         with open("arxiv_plot.html", "r") as f:
-    #             html_content = f.read()
-    #         st.components.v1.html(html_content, height=800, scrolling=True)
+    #     st.components.v1.html(plot.to_html() if hasattr(plot, 'to_html') else open("custom_plot.html", "r").read(), height=800, scrolling=True)
     # except Exception as e:
-    #     st.error(f"Unable to render the plot. Error: {e}")
+    #     st.error(f"Error rendering plot: {e}")
 
 # Entity Tracking
 elif section == "Entity Tracking":
