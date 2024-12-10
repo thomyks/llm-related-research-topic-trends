@@ -960,7 +960,7 @@ elif section == "Topic Discovery":
         csv_data = st.session_state.displayed_domains.to_csv(index=False)
         st.download_button(
             label="📥 **Download Filtered Table as CSV**",
-            data=csv_data,
+            datas=csv_data,
             file_name=csv_file_name,
             mime="text/csv",
         )
