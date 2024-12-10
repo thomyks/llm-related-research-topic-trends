@@ -9,13 +9,16 @@ from sentence_transformers import SentenceTransformer
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import json
-import requests
 import numpy as np
 import io
 import matplotlib
 matplotlib.rcParams["figure.dpi"] = 72
 import datamapplot as dmp
+import os
+from dotenv import load_dotenv
 
+# Load environment variables from the .env file
+load_dotenv()
 
 # Correct order for set_page_config
 st.set_page_config(
@@ -769,8 +772,20 @@ elif section == "Topic Overview":
     )
 
 elif section == "Topic Discovery":
+        # # Load environment variables from the .env file
+    load_dotenv()
+
+    # Access the LLM API key
+    api_key = os.getenv("LLM_API_KEY")
+
+    # Test if the key is loaded
+    if api_key:
+        st.write("API key loaded successfully!")
+    else:
+        st.error("API key is missing. Please check your .env file.")
+
     # Initialize Together AI client
-    client = together.Client(api_key='e52dd14cb34eee0f4eab33d6f8ea5202276732546dc66be6394f80629e6c061f')
+    client = together.Client(api_key=api_key)
     model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
 
     # Load datasets with caching
