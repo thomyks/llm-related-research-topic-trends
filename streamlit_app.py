@@ -434,56 +434,56 @@ elif section == "LLM-related Research Overview":
     st.altair_chart(chart, use_container_width=True)
 
 
-    # Datamapplot
-    # Step 1: Load Local Data with Caching
-    @st.cache_data
-    def load_coordinates_data():
-        df = pd.read_csv("data/Datamap/Concatenated_LLM_Subdomains_embeddings.csv")
-        if isinstance(df['2d_coords'].iloc[0], str):
-            df['2d_coords'] = df['2d_coords'].apply(eval)
-        return df
+    # # Datamapplot
+    # # Step 1: Load Local Data with Caching
+    # @st.cache_data
+    # def load_coordinates_data():
+    #     df = pd.read_csv("data/Datamap/Concatenated_LLM_Subdomains_embeddings.csv")
+    #     if isinstance(df['2d_coords'].iloc[0], str):
+    #         df['2d_coords'] = df['2d_coords'].apply(eval)
+    #     return df
 
-    df = load_coordinates_data()
+    # df = load_coordinates_data()
 
-    # Extract coordinates and labels
-    coords_array = np.array(df['2d_coords'].tolist())
-    labels_array = df['Human_Readable_Topic'].to_numpy()
+    # # Extract coordinates and labels
+    # coords_array = np.array(df['2d_coords'].tolist())
+    # labels_array = df['Human_Readable_Topic'].to_numpy()
 
-    # Prepare hover data
-    hover_data = df['title'].tolist() if 'title' in df.columns else [f"Topic {i}" for i in range(len(df))]
+    # # Prepare hover data
+    # hover_data = df['title'].tolist() if 'title' in df.columns else [f"Topic {i}" for i in range(len(df))]
 
-    # Step 2: Generate the Interactive Plot
-    plot = dmp.create_interactive_plot(
-        coords_array,
-        labels_array,
-        hover_text=hover_data,
-        font_family="Playfair Display SC",
-        title="Discover Data Landscape",
-        sub_title="A data map based on the LLM-related research.",
-        logo="https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/ArXiv_logo_2022.svg/512px-ArXiv_logo_2022.svg.png",
-        logo_width=180,
-        on_click="window.open(`http://google.com/search?q=\"{hover_text}\"`)",
-        enable_search=True,
-        darkmode=True,
-    )
+    # # Step 2: Generate the Interactive Plot
+    # plot = dmp.create_interactive_plot(
+    #     coords_array,
+    #     labels_array,
+    #     hover_text=hover_data,
+    #     font_family="Playfair Display SC",
+    #     title="Discover Data Landscape",
+    #     sub_title="A data map based on the LLM-related research.",
+    #     logo="https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/ArXiv_logo_2022.svg/512px-ArXiv_logo_2022.svg.png",
+    #     logo_width=180,
+    #     on_click="window.open(`http://google.com/search?q=\"{hover_text}\"`)",
+    #     enable_search=True,
+    #     darkmode=True,
+    # )
 
-    # Step 3: Streamlit App
-    st.title(" Data Landscape")
-    st.subheader("A data map based on LLM-related research papers.")
+    # # Step 3: Streamlit App
+    # st.title(" Data Landscape")
+    # st.subheader("A data map based on LLM-related research papers.")
 
-    # Render the plot in Streamlit
-    try:
-        # Check if the plot object has `to_html` method for rendering
-        if hasattr(plot, 'to_html'):
-            st.components.v1.html(plot.to_html(), height=800, scrolling=True)
-        else:
-            # Save the plot to an HTML file and render
-            plot.save("custom_plot.html")
-            with open("custom_plot.html", "r") as f:
-                html_content = f.read()
-            st.components.v1.html(html_content, height=800, scrolling=True)
-    except Exception as e:
-        st.error(f"Unable to render the plot. Error: {e}")
+    # # Render the plot in Streamlit
+    # try:
+    #     # Check if the plot object has `to_html` method for rendering
+    #     if hasattr(plot, 'to_html'):
+    #         st.components.v1.html(plot.to_html(), height=800, scrolling=True)
+    #     else:
+    #         # Save the plot to an HTML file and render
+    #         plot.save("custom_plot.html")
+    #         with open("custom_plot.html", "r") as f:
+    #             html_content = f.read()
+    #         st.components.v1.html(html_content, height=800, scrolling=True)
+    # except Exception as e:
+    #     st.error(f"Unable to render the plot. Error: {e}")
 
 
     # # Step 1: Load Data
