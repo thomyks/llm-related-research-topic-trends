@@ -775,7 +775,6 @@ elif section == "Topic Overview":
 
 elif section == "Topic Discovery":
     secrets_path = "secrets.toml"
-    
     secrets = toml.load(secrets_path)
     api_key = secrets["LLM_API_KEY"]["key"]
     
@@ -964,7 +963,7 @@ elif section == "Topic Discovery":
         csv_data = st.session_state.displayed_domains.to_csv(index=False)
         st.download_button(
             label="📥 **Download Filtered Table as CSV**",
-            datas=csv_data,
+            data=csv_data,
             file_name=csv_file_name,
             mime="text/csv",
         )
