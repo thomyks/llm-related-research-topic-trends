@@ -16,6 +16,8 @@ matplotlib.rcParams["figure.dpi"] = 72
 import datamapplot as dmp
 import os
 from dotenv import load_dotenv
+import toml
+
 
 # Load environment variables from the .env file
 load_dotenv()
@@ -774,31 +776,59 @@ elif section == "Topic Overview":
 elif section == "Topic Discovery":
         # # Load environment variables from the .env file
 
-    load_dotenv()
+    # load_dotenv()
 
-    # Access the API key
-    api_key = os.getenv("LLM_API_KEY")
+    # # Access the API key
+    # api_key = os.getenv("LLM_API_KEY")
 
-    # Debug: Print the API key for verification (avoid in production)
-    if api_key:
-        st.write("API key successfully loaded!")
-    else:
-        st.error("API key is missing. Please check your .env file.")
+    # # Debug: Print the API key for verification (avoid in production)
+    # if api_key:
+    #     st.write("API key successfully loaded!")
+    # else:
+    #     st.error("API key is missing. Please check your .env file.")
 
-    # Initialize Together AI client
+    # # Initialize Together AI client
+    # try:
+    #     client = together.Client(api_key=api_key)
+    #     st.write("Together client initialized successfully!")
+    # except together.error.AuthenticationError as e:
+    #     st.error(f"Authentication error: {e}")
+
+
+
+    # # Test if the key is loaded
+    # if api_key:
+    #     st.write("API key loaded successfully!")
+    # else:
+    #     st.error("API key is missing. Please check your .env file.")
+
+
+    secrets_path = "secrets.toml"
+
+
     try:
-        client = together.Client(api_key=api_key)
-        st.write("Together client initialized successfully!")
-    except together.error.AuthenticationError as e:
-        st.error(f"Authentication error: {e}")
+        # Parse the secrets.toml file
+        secrets = toml.load(secrets_path)
+        api_key = secrets["LLM_API_KEY"]["key"]
 
+        # Debugging: Check if the key is loaded
+        if api_key:
+            st.write("API key loaded successfully!")
+        else:
+            st.error("API key is missing in secrets.toml.")
+    except FileNotFoundError:
+        st.error(f"Secrets file not found at {secrets_path}. Please ensure it exists.")
+    except KeyError:
+        st.error("LLM_API_KEY or key is missing in the secrets.toml file.")
 
-
-    # Test if the key is loaded
+    # Initialize Together client
     if api_key:
-        st.write("API key loaded successfully!")
-    else:
-        st.error("API key is missing. Please check your .env file.")
+        try:
+            client = together.Client(api_key=api_key)
+            st.write("Together client initialized successfully!")
+        except together.error.AuthenticationError as e:
+            st.error(f"Authentication error: {e}")    
+        
 
     # Initialize Together AI client
     client = together.Client(api_key=api_key)
