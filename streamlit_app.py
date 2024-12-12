@@ -5,7 +5,7 @@ import plotly.express as px
 import streamlit.components.v1 as components
 from PyPDF2 import PdfReader
 import together
-from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer,util
 from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 import json
@@ -47,7 +47,7 @@ st.title("Discover, Analyze, and Export Insights on Your Favorite LLM Research T
 
 section = st.sidebar.radio(
     "Go to",
-    [ "Topic Tracking","Topic Overview","LLM-related Research Overview", "Entity Tracking", "Topic Discovery"],
+    [ "Topic Tracking","Topic Overview","LLM-related Research Overview", "Entity Tracking", "Topic Discovery", "Paper Tracking"],
     index=0
 )
 
@@ -950,3 +950,270 @@ elif section == "Topic Discovery":
             file_name=csv_file_name,
             mime="text/csv",
         )
+
+
+
+# Paper Tracking Section
+elif section == "Paper Tracking":
+    st.title("Paper Tracking")
+    st.write(
+        """
+        Use this tool to explore research papers related to the LLM domain. You can search for a specific paper by title and view its details, including the author(s), abstract, and link to the full text. Additionally, visualize the publication trends over time.
+        """
+    )
+
+    # Load the dataset
+    @st.cache_data
+    def load_paper_data():
+        file_path = "data/Datamap/papers_with_reduced_embeddings (1).csv"
+        df = pd.read_csv(file_path)
+        return df
+
+    df = load_paper_data()
+
+    # Parse the 'update_date' column into datetime objects
+    df["update_date"] = pd.to_datetime(df["update_date"], errors="coerce")
+
+    # Drop rows with invalid dates
+    df = df.dropna(subset=["update_date"])
+
+    # Check if the dataset is empty after cleaning
+    if df.empty:
+        st.error("No valid dates found in the dataset. Please check your data.")
+    else:
+        # Extract valid min and max dates and convert them to Python datetime
+        min_date = df["update_date"].min().to_pydatetime()
+        max_date = df["update_date"].max().to_pydatetime()
+
+        # Debugging: Ensure min_date and max_date are valid
+        if min_date is None or max_date is None:
+            st.error("Date range could not be determined due to invalid data.")
+        else:
+            # Dropdown Selection Box
+            st.title("Paper Explorer")
+            st.write("Select a paper title from the dropdown to view its details, or start typing your query.")
+
+            # Add an empty option to enable typing
+            titles = [""] + df["title"].tolist()
+            selected_title = st.selectbox(
+                "Search or Select a Paper Title:", 
+                titles, 
+                index=0, 
+                help="Click and type your own query."
+            )
+
+            # Display the selected paper's information
+            if selected_title:
+                # Check if the title exists in the dataset
+                if selected_title in df["title"].values:
+                    # Retrieve the row corresponding to the selected title
+                    paper_details = df[df["title"] == selected_title].iloc[0]
+
+                    # Display details
+                    st.subheader("Paper Details")
+                    st.markdown(f"**Title:** {paper_details['title']}")
+                    st.markdown(f"**Authors:** {paper_details['submitter']}")
+                    st.markdown(f"**Abstract:** {paper_details['abstract']}")
+                    st.markdown(f"**Categories:** {paper_details['Categories']}")
+                    st.markdown(f"**Human Readable Topic:** {paper_details['Human_Readable_Topic']}")
+                    st.markdown(f"**Subdomain:** {paper_details['Subdomain']}")
+                    st.markdown(f"**Publication Date:** {paper_details['update_date']}")
+                    st.markdown(f"**URL:** [Access Paper]({paper_details['id']})")
+
+                    # Filter papers with the same Human Readable Topic
+                    topic = paper_details['Human_Readable_Topic']
+                    topic_papers = df[df['Human_Readable_Topic'] == topic]
+
+                    # Configure the slider with valid datetime objects
+                    st.write("Select a date range to filter the data:")
+                    try:
+                        date_range = st.slider(
+                            "Date Range",
+                            min_date,
+                            max_date,
+                            (min_date, max_date),
+                            format="YYYY-MM-DD",
+                        )
+                    except Exception as e:
+                        st.error(f"Error setting up the slider: {e}")
+                        st.stop()
+
+                    # Filter the dataframe based on user inputs
+                    topic_papers = topic_papers[topic_papers["update_date"].between(date_range[0], date_range[1])]
+
+                    # Convert dates to weekly periods
+                    topic_papers["week"] = topic_papers["update_date"].dt.to_period("W").apply(lambda x: x.start_time)
+
+                    # Prepare data for row-based Y-axis
+                    topic_papers['jitter'] = topic_papers.groupby('week').cumcount() * 0.1  # Add jitter to prevent overlap
+                    topic_papers['row'] = topic_papers.groupby('week').cumcount() + 1 + topic_papers['jitter']
+
+                    # Weekly interactive visualization with adjusted Y-axis and bubble size
+                    st.title("Weekly Paper Distribution for Selected Topic")
+                    st.write(f"Below is a weekly distribution of papers for the topic: **{topic}**, with dynamically adjusted rows and bubble sizes representing semantic closeness.")
+
+                    st.markdown("""The size of the bubbles reflects the **semantic closeness** of the paper titles. Larger bubbles indicate papers that are more semantically similar to the overall topic cluster, based on cosine similarity of their embeddings.""")
+
+                    import altair as alt
+
+                    # Compute semantic closeness rankings using Reduced_Embedding
+                    from sklearn.metrics.pairwise import cosine_similarity
+
+                    if 'Reduced_Embedding' in topic_papers.columns:
+                        try:
+                            embeddings = topic_papers['Reduced_Embedding'].apply(eval).tolist()
+                            similarities = cosine_similarity(embeddings)
+                            closeness = similarities.mean(axis=1)
+                            topic_papers['closeness'] = closeness
+                        except Exception as e:
+                            st.error(f"Error processing Reduced_Embedding: {e}")
+                            topic_papers['closeness'] = 0  # Assign default value if calculation fails
+                    else:
+                        topic_papers['closeness'] = 0  # Default if Reduced_Embedding is missing
+
+                    # Prepare data for the interactive chart
+                    interactive_data = topic_papers[['week', 'title', 'row', 'closeness', 'submitter', 'Categories']]
+
+                    interactive_chart = alt.Chart(interactive_data).mark_circle().encode(
+                        x=alt.X("week:T", title="Week", axis=alt.Axis(labelAngle=-45, titleFontSize=12, labelFontSize=10)),
+                        y=alt.Y("row:Q", title="Number of Paper", axis=alt.Axis(tickCount=interactive_data['row'].max(), titleFontSize=12, labelFontSize=10), scale=alt.Scale(domain=(1, interactive_data['row'].max() + 1))),
+                        size=alt.Size("closeness:Q", title="Semantic Closeness", scale=alt.Scale(range=[50, 300])),
+                        color=alt.Color("closeness:Q", title="Semantic Closeness", scale=alt.Scale(scheme='blues')),
+                        tooltip=["title", "week", "closeness", "submitter", "Categories"]
+                    ).properties(
+                        width=850,
+                        height=500,
+                        title=alt.TitleParams(f"Interactive Weekly Paper Distribution: {topic}", anchor='start', fontSize=16, subtitleFontSize=12)
+                    ).configure_legend(
+                        labelFontSize=10,
+                        titleFontSize=12
+                    ).configure_view(
+                        strokeWidth=0
+                    )
+
+                    st.altair_chart(interactive_chart, use_container_width=True)
+
+                else:
+                    st.warning("The entered query does not match any paper title in the dataset. Please select an existing paper title or ensure your query is correct.")
+            else:
+                st.info("Please select a paper from the dropdown above or type your query.")
+
+
+# # Paper Tracking Section
+# elif section == "Paper Tracking":
+#     st.title("Paper Tracking")
+#     st.write(
+#         """
+#         Use this tool to explore research papers related to the LLM domain. You can search for a specific paper by title and view its details, including the author(s), abstract, and link to the full text. Additionally, visualize the publication trends over time.
+#         """
+#     )
+
+
+#     # Load the dataset
+#     @st.cache_data
+#     def load_paper_data():
+#         file_path = "data/Datamap/papers_with_reduced_embeddings (1).csv"
+#         df = pd.read_csv(file_path)
+#         return df
+
+#     df = load_paper_data()
+
+#     # Parse the 'update_date' column into datetime objects
+#     df["update_date"] = pd.to_datetime(df["update_date"], errors="coerce")
+
+#     # Drop rows with invalid dates
+#     df = df.dropna(subset=["update_date"])
+
+#     # Dropdown Selection Box
+#     st.title("Paper Explorer")
+#     st.write("Select a paper title from the dropdown to view its details, or start typing your query.")
+
+#     # Add an empty option to enable typing
+#     titles = [""] + df["title"].tolist()
+#     selected_title = st.selectbox(
+#         "Search or Select a Paper Title:", 
+#         titles, 
+#         index=0, 
+#         help="Click and type your own query."
+#     )
+
+#     # Display the selected paper's information
+#     if selected_title:
+#         # Check if the title exists in the dataset
+#         if selected_title in df["title"].values:
+#             # Retrieve the row corresponding to the selected title
+#             paper_details = df[df["title"] == selected_title].iloc[0]
+
+#             # Display details
+#             st.subheader("Paper Details")
+#             st.markdown(f"**Title:** {paper_details['title']}")
+#             st.markdown(f"**Authors:** {paper_details['submitter']}")
+#             st.markdown(f"**Abstract:** {paper_details['abstract']}")
+#             st.markdown(f"**Categories:** {paper_details['Categories']}")
+#             st.markdown(f"**Human Readable Topic:** {paper_details['Human_Readable_Topic']}")
+#             st.markdown(f"**Subdomain:** {paper_details['Subdomain']}")
+#             st.markdown(f"**Publication Date:** {paper_details['update_date']}")
+#             st.markdown(f"**URL:** [Access Paper]({paper_details['id']})")
+
+#             # Filter papers with the same Human Readable Topic
+#             topic = paper_details['Human_Readable_Topic']
+#             topic_papers = df[df['Human_Readable_Topic'] == topic]
+#             topic_papers['week'] = topic_papers['update_date'].dt.to_period('W').apply(lambda x: x.start_time)
+
+#             # Compute semantic closeness rankings using Reduced_Embedding
+#             from sklearn.metrics.pairwise import cosine_similarity
+
+#             if 'Reduced_Embedding' in topic_papers.columns:
+#                 try:
+#                     embeddings = topic_papers['Reduced_Embedding'].apply(eval).tolist()
+#                     similarities = cosine_similarity(embeddings)
+#                     closeness = similarities.mean(axis=1)
+#                     topic_papers['closeness'] = closeness
+#                 except Exception as e:
+#                     st.error(f"Error processing Reduced_Embedding: {e}")
+#                     topic_papers['closeness'] = 0  # Assign default value if calculation fails
+#             else:
+#                 topic_papers['closeness'] = 0  # Default if Reduced_Embedding is missing
+
+#             # Prepare data for row-based Y-axis
+#             topic_papers['jitter'] = topic_papers.groupby('week').cumcount() * 0.1  # Add jitter to prevent overlap
+#             topic_papers['row'] = topic_papers.groupby('week').cumcount() + 1 + topic_papers['jitter']
+
+#             # Weekly interactive visualization with adjusted Y-axis and bubble size
+#             st.title("Weekly Paper Distribution for Selected Topic")
+#             st.write(f"Below is a weekly distribution of papers for the topic: **{topic}**, with dynamically adjusted rows and bubble sizes representing semantic closeness.")
+
+#             st.markdown("""The size of the bubbles reflects the **semantic closeness** of the paper titles. Larger bubbles indicate papers that are more semantically similar to the overall topic cluster, based on cosine similarity of their embeddings.""")
+
+#             import altair as alt
+
+#             # Prepare data for the interactive chart
+#             interactive_data = topic_papers[['week', 'title', 'row', 'closeness', 'submitter', 'Categories']]
+
+#             interactive_chart = alt.Chart(interactive_data).mark_circle().encode(
+#                 x=alt.X("week:T", title="Week", axis=alt.Axis(labelAngle=-45, titleFontSize=12, labelFontSize=10)),
+#                 y=alt.Y("row:Q", title="Row", axis=alt.Axis(tickCount=interactive_data['row'].max(), titleFontSize=12, labelFontSize=10), scale=alt.Scale(domain=(1, interactive_data['row'].max() + 1))),
+#                 size=alt.Size("closeness:Q", title="Semantic Closeness", scale=alt.Scale(range=[50, 300])),
+#                 color=alt.Color("closeness:Q", title="Semantic Closeness", scale=alt.Scale(scheme='blues')),
+#                 tooltip=["title", "week", "closeness", "submitter", "Categories"]
+#             ).properties(
+#                 width=850,
+#                 height=500,
+#                 title=alt.TitleParams(f"Interactive Weekly Paper Distribution: {topic}", anchor='start', fontSize=16, subtitleFontSize=12)
+#             ).configure_legend(
+#                 labelFontSize=10,
+#                 titleFontSize=12
+#             ).configure_view(
+#                 strokeWidth=0
+#             )
+
+#             st.altair_chart(interactive_chart, use_container_width=True)
+
+#         else:
+#             st.warning("The entered query does not match any paper title in the dataset. Please select an existing paper title or ensure your query is correct.")
+#     else:
+#         st.info("Please select a paper from the dropdown above or type your query.")
+
+
+
+
