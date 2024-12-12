@@ -958,7 +958,7 @@ elif section == "Paper Tracking":
     st.title("Paper Tracking")
     st.write(
         """
-        Use this tool to explore research papers related to the LLM domain. You can search for a specific paper by title and view its details, including the author(s), abstract, and link to the full text. Additionally, visualize the publication trends over time.
+       In the Paper Tracking Section, you can explore research papers related to the LLM domain by searching for specific titles and viewing detailed information like authors, abstracts, categories, and publication dates. Visualize weekly publication trends with interactive charts, filter papers by date ranges, and discover semantically similar papers based on embeddings. Finally, download a customized CSV summary of your selected topic for further analysis or sharing.
         """
     )
 
@@ -993,7 +993,6 @@ elif section == "Paper Tracking":
             st.error("Date range could not be determined due to invalid data.")
         else:
             # Dropdown Selection Box
-            st.title("Paper Explorer")
             st.write("Select a paper title from the dropdown to view its details, or start typing your query.")
 
             # Add an empty option to enable typing
