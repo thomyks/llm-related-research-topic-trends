@@ -104,16 +104,12 @@ if section == "Topic Tracking":
         if df_subdomain_filtered.empty:
             st.warning(f"No data available for the selected domain(s): {', '.join(selected_categories)} and subdomain(s): {', '.join(selected_subdomains)}.")
         else:
-                       # Datamapplot visualization integration
             if "2d_coords" in df_subdomain_filtered.columns and "title" in df_subdomain_filtered.columns:
                 # Ensure the '2d_coords' column is in the correct format
                 df_subdomain_filtered["2d_coords"] = df_subdomain_filtered["2d_coords"].apply(eval)  # Convert string to list if needed
                 coords_array = np.array(df_subdomain_filtered["2d_coords"].tolist(), dtype=np.float32)
                 labels_array = df_subdomain_filtered["Human_Readable_Topic"].to_numpy()
                 hover_data = df_subdomain_filtered["title"].tolist()
-
-                import datamapplot as dmp
-
                 plot = dmp.create_interactive_plot(
                     coords_array,
                     labels_array,
@@ -121,8 +117,7 @@ if section == "Topic Tracking":
                     font_family="Playfair Display SC",
                     title=f"Datamap for Subdomain(s): {', '.join(selected_subdomains)}",
                     sub_title="An interactive visualization of selected data",
-                    logo=None,  # Add logo if desired
-                    on_click="window.open(`http://google.com/search?q=\"{hover_text}\"`)",
+                    logo="https://upload.wikimedia.org/wikipedia/commons/thumb/b/bc/ArXiv_logo_2022.svg/320px-ArXiv_logo_2022.svg.png",
                     enable_search=True,
                     darkmode=True,
                 )
@@ -312,13 +307,13 @@ if section == "Topic Tracking":
 
                     # Display the Plotly heatmap
                     st.plotly_chart(fig, use_container_width=True)
-
-                
                 else:
                     st.warning("No data available for the selected topics.")
             # Display detailed insights
             st.markdown("### Monthly Trends")
             st.write(f"Showing monthly trends for topics under subdomain/s: {', '.join(selected_subdomains)}.")
+
+            
 
             # Add a data table for granular details
             st.dataframe(df_grouped_filtered, use_container_width=True)
@@ -337,8 +332,30 @@ if section == "Topic Tracking":
             st.write(f"Export detailed information about research paper, including links, dates, titles, abstracts, topic label, categories, submitter, and monthly trends for topics under the subdomain/s: **{', '.join(selected_subdomains)}**.")
 
             # Display the filtered dataset for download
-            st.dataframe(df_additional_info, use_container_width=True, column_config={"id":st.column_config.LinkColumn()})
+            # Define the columns to display
+            columns_to_display = ["id", "update_date", "title", "abstract", "Human_Readable_Topic", "Categories", "submitter", "Subdomain"]
 
+            # Filter the DataFrame to include only the specified columns
+            df_additional_info = df_additional_info[columns_to_display]
+
+            # Rename columns to be more user-friendly
+            columns_to_rename = {
+                "id": "URL",
+                "update_date": "Update Date",
+                "title": "Title",
+                "abstract": "Abstract",
+                "Human_Readable_Topic": "Topic",
+                "Categories": "Domain",
+                "submitter": "Submitter",
+                "Subdomain": "Subdomain"
+            }
+
+            # Filter the DataFrame to include only the specified columns and rename them
+            df_additional_info = df_additional_info[columns_to_rename.keys()].rename(columns=columns_to_rename)
+
+            # Display the filtered and renamed dataset
+            st.dataframe(df_additional_info, use_container_width=True, column_config={"URL": st.column_config.LinkColumn()})
+                        
              # Generate a filename based on selected topics
             if selected_topics:
                 # Create a shortened version of the topics for the filename
