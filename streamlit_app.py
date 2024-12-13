@@ -15,12 +15,11 @@ import matplotlib
 matplotlib.rcParams["figure.dpi"] = 72
 import datamapplot as dmp
 import os
-from dotenv import load_dotenv
 import toml
+import datetime
 
 
-# Load environment variables from the .env file
-load_dotenv()
+
 
 # Correct order for set_page_config
 st.set_page_config(
@@ -951,8 +950,6 @@ elif section == "Topic Discovery":
             mime="text/csv",
         )
 
-
-
 # Paper Tracking Section
 elif section == "Paper Tracking":
     st.title("Paper Tracking")
@@ -1026,6 +1023,9 @@ elif section == "Paper Tracking":
                     topic = paper_details['Human_Readable_Topic']
                     topic_papers = df[df['Human_Readable_Topic'] == topic]
 
+                    # Set the adjusted date range to show the last half year
+                    adjusted_min_date = max_date - datetime.timedelta(days=180)
+
                     # Initialize the SentenceTransformer model
                     model = SentenceTransformer('all-MiniLM-L6-v2')
 
@@ -1040,14 +1040,14 @@ elif section == "Paper Tracking":
                         lambda x: cosine_similarity(selected_paper_embedding, x)[0][0]
                     )
 
-                    # Configure the slider with valid datetime objects
+                    # Configure the slider with the full date range but focus on the last half year
                     st.write("Select a date range to filter the data:")
                     try:
                         date_range = st.slider(
                             "Date Range",
                             min_date,
                             max_date,
-                            (min_date, max_date),
+                            (adjusted_min_date, max_date),
                             format="YYYY-MM-DD",
                         )
                     except Exception as e:
@@ -1085,7 +1085,7 @@ elif section == "Paper Tracking":
                         title=alt.TitleParams(f"Interactive Weekly Paper Distribution: {topic}", anchor='start', fontSize=18, subtitleFontSize=14)
                     ).configure_view(
                         strokeWidth=0
-                    )
+                    ).interactive() 
 
                     st.altair_chart(interactive_chart, use_container_width=True)
 
