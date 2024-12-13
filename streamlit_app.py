@@ -1075,7 +1075,13 @@ elif section == "Paper Tracking":
 
                     interactive_chart = alt.Chart(interactive_data).mark_circle().encode(
                         x=alt.X("week:T", title="Week", axis=alt.Axis(labelAngle=-45, titleFontSize=12, labelFontSize=10)),
-                        y=alt.Y("row:Q", title="Paper Count by Week", axis=alt.Axis(titleFontSize=12, labelFontSize=10), scale=alt.Scale(domain=(1, interactive_data['row'].max() + 1))),
+                        y=alt.Y("row:Q", 
+                                title="Papers", 
+                                axis=alt.Axis(titleFontSize=12, 
+                                            labelFontSize=10, 
+                                            tickMinStep=1),  # Ensures the axis ticks increment by 1
+                                scale=alt.Scale(domain=(1, interactive_data['row'].max() + 1))
+                            ),
                         size=alt.Size("closeness:Q", title="Semantic Closeness", scale=alt.Scale(range=[50, 500])),
                         color=alt.Color("closeness:Q", title="Semantic Closeness", scale=alt.Scale(scheme='blues')),
                         tooltip=["title", "week", "closeness", "submitter",  "abstract", "Categories"]
@@ -1091,17 +1097,18 @@ elif section == "Paper Tracking":
 
                     # Add a downloadable summary of papers
                     st.write("### Papers Summary for Selected Topic")
-                    st.dataframe(topic_papers[['title', 'submitter', 'Subdomain', 'Categories', 'update_date']])
+                    st.dataframe(topic_papers[['title', 'id', 'submitter', 'Subdomain', 'Categories', 'update_date']],column_config={"id":st.column_config.LinkColumn()})
+
 
                     # Download button for papers summary
                     @st.cache_data
                     def convert_df_to_csv(df):
                         return df.to_csv(index=False).encode('utf-8')
 
-                    csv_data = convert_df_to_csv(topic_papers[['title', 'submitter', 'abstract', 'Categories', 'update_date']])
+                    csv_data = convert_df_to_csv(topic_papers[['title', 'id', 'submitter', 'abstract', 'Categories', 'update_date']])
 
                     st.download_button(
-                        label="Download Papers Summary as CSV",
+                        label="Papers Summary as CSV",
                         data=csv_data,
                         file_name=f"papers_summary_{topic}.csv",
                         mime="text/csv",
