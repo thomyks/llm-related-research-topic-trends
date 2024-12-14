@@ -1215,6 +1215,7 @@ elif section == "Subscribe":
     try:
         # Start the scheduler
         scheduler = BackgroundScheduler()
+        scheduler.add_job(send_weekly_updates, "date", run_date=datetime.datetime.now() + datetime.timedelta(seconds=30))
         scheduler.add_job(send_weekly_updates, "cron", day_of_week="sun", hour=0, minute=45)
         scheduler.start()
 
