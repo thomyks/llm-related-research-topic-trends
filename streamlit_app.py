@@ -17,6 +17,11 @@ import datamapplot as dmp
 import os
 import toml
 import datetime
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from apscheduler.schedulers.background import BackgroundScheduler
+
 
 
 
@@ -46,7 +51,7 @@ st.title("Discover, Analyze, and Export Insights on Your Favorite LLM Research T
 
 section = st.sidebar.radio(
     "Go to",
-    [ "Topic Tracking","Topic Overview","LLM-related Research Overview", "Entity Tracking", "Topic Discovery", "Paper Tracking"],
+    [ "Topic Tracking","Topic Overview","LLM-related Research Overview", "Entity Tracking", "Topic Discovery", "Paper Tracking","Subscribe"],
     index=0
 )
 
@@ -1118,3 +1123,105 @@ elif section == "Paper Tracking":
                     st.warning("The entered query does not match any paper title in the dataset. Please select an existing paper title or ensure your query is correct.")
             else:
                 st.info("Please select a paper from the dropdown above or type your query.")
+
+# Paper Tracking Section
+elif section == "Subscribe":
+    st.title("Paper Tracking")
+    st.write(
+        """
+       In the Paper Tracking Section, you can explore research papers related to the LLM domain by searching for specific titles and viewing detailed information like authors, abstracts, categories, and publication dates. Visualize weekly publication trends with interactive charts, filter papers by date ranges, and discover semantically similar papers based on embeddings. Finally, download a customized CSV summary of your selected topic for further analysis or sharing.
+        """
+    )
+
+    # Load the dataset
+    @st.cache_data
+    def load_paper_data():
+        file_path = "data/Datamap/Concatenated_LLM_Subdomains_embeddings.csv"
+        df = pd.read_csv(file_path)
+        return df
+
+    df = load_paper_data()
+
+    # Parse the 'update_date' column into datetime objects
+    df["update_date"] = pd.to_datetime(df["update_date"], errors="coerce")
+
+    # Drop rows with invalid dates
+    df = df.dropna(subset=["update_date"])
+
+    # Remove duplicates among Human Readable Topics
+    df = df.drop_duplicates(subset=["title", "Human_Readable_Topic"])
+
+    # Initialize or read subscriptions from file
+    SUBSCRIPTIONS_FILE = "subscriptions.csv"
+    def initialize_subscriptions_file():
+        if not os.path.exists(SUBSCRIPTIONS_FILE):
+            pd.DataFrame(columns=["Name", "Email", "Topic"]).to_csv(SUBSCRIPTIONS_FILE, index=False)
+
+    initialize_subscriptions_file()
+
+    # Function to send email updates
+    def send_email(recipient, subject, content):
+        smtp_user = st.secrets["email"]["SMTP_USER"]
+        smtp_pass = st.secrets["email"]["SMTP_PASS"]
+        msg = MIMEMultipart()
+        msg["From"] = smtp_user
+        msg["To"] = recipient
+        msg["Subject"] = subject
+        msg.attach(MIMEText(content, "html"))
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()
+            server.login(smtp_user, smtp_pass)
+            server.send_message(msg)
+
+    # Add subscription feature
+    st.subheader("Subscribe to This Topic")
+    st.write("Subscribe to this topic to get weekly updates directly to your inbox.")
+    with st.form("subscription_form"):
+        name = st.text_input("Your Name")
+        email = st.text_input("Your Email")
+        topic_to_subscribe = st.text_input("Topic to Subscribe", "Human Readable Topic")
+        subscribe_button = st.form_submit_button("Subscribe")
+
+    if subscribe_button:
+        if name and email and topic_to_subscribe:
+            subscriptions = pd.read_csv(SUBSCRIPTIONS_FILE)
+            if subscriptions[(subscriptions["Email"] == email) & (subscriptions["Topic"] == topic_to_subscribe)].empty:
+                new_subscription = pd.DataFrame({"Name": [name], "Email": [email], "Topic": [topic_to_subscribe]})
+                subscriptions = pd.concat([subscriptions, new_subscription], ignore_index=True)
+                subscriptions.to_csv(SUBSCRIPTIONS_FILE, index=False)
+                st.success(f"Thank you, {name}! You've successfully subscribed to updates for {topic_to_subscribe}.")
+            else:
+                st.warning(f"You are already subscribed to updates for {topic_to_subscribe}.")
+        else:
+            st.error("Please fill in all the fields.")
+
+    # Weekly email scheduler
+    def send_weekly_updates():
+        subscriptions = pd.read_csv(SUBSCRIPTIONS_FILE)
+        if subscriptions.empty:
+            return
+        for _, row in subscriptions.iterrows():
+            content = f"<h1>Weekly Update on {row['Topic']}</h1><p>Here are the latest updates...</p>"
+            send_email(row["Email"], f"Weekly Update: {row['Topic']}", content)
+
+    # Scheduler to send weekly updates
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(send_weekly_updates, "cron", day_of_week="sun", hour=0, minute=36)
+    scheduler.start()
+
+    # Paper Tracking Functionality (Unchanged from your original code)
+    # Process and visualize paper tracking data...
+
+    try:
+        # Start the scheduler
+        scheduler = BackgroundScheduler()
+        scheduler.add_job(send_weekly_updates, "cron", day_of_week="sun", hour=0, minute=36)
+        scheduler.start()
+
+        # Streamlit app logic
+        # Your existing Streamlit code here...
+        st.title("Paper Tracking App with Subscriptions")
+
+    finally:
+        # Gracefully shut down the scheduler
+        scheduler.shutdown()
