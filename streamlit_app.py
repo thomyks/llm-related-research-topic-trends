@@ -1206,7 +1206,7 @@ elif section == "Subscribe":
 
     # Scheduler to send weekly updates
     scheduler = BackgroundScheduler()
-    scheduler.add_job(send_weekly_updates, "cron", day_of_week="sun", hour=0, minute=36)
+    scheduler.add_job(send_weekly_updates, "cron", day_of_week="sun", hour=0, minute=45)
     scheduler.start()
 
     # Paper Tracking Functionality (Unchanged from your original code)
@@ -1215,7 +1215,7 @@ elif section == "Subscribe":
     try:
         # Start the scheduler
         scheduler = BackgroundScheduler()
-        scheduler.add_job(send_weekly_updates, "cron", day_of_week="sun", hour=0, minute=36)
+        scheduler.add_job(send_weekly_updates, "cron", day_of_week="sun", hour=0, minute=45)
         scheduler.start()
 
         # Streamlit app logic
