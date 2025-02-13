@@ -1,32 +1,15 @@
-name: Update Streamlit App
+name: CI
 
 on:
-  schedule:
-    # Runs at 00:00 every Sunday
-    - cron: '0 0 * * 0'
   push:
-    branches:
-      - master
+    branches: [ "main" ]
 
 jobs:
-  update_app:
+  build:
     runs-on: ubuntu-latest
     steps:
-    - name: Check out the repository
-      uses: actions/checkout@v2
+      - name: Check out repo
+        uses: actions/checkout@v3
 
-    - name: Set up Python
-      uses: actions/setup-python@v2
-      with:
-        python-version: '3.9'
-
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-
-    - name: Pull latest code and restart Streamlit
-      run: |
-        git pull origin master
-        # Add your command to restart Streamlit app, adjust as necessary based on your deployment
-        echo "Restart Streamlit app command here"
+      - name: Run a sample command
+        run: echo "Hello from GitHub Actions!"
